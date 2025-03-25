@@ -1,12 +1,15 @@
-# Етап 1: Базова структура та управління контактами
+# Personal Assistant
 
-## Опис
-Цей етап реалізує базову структуру проекту персонального помічника з функціоналом управління контактами. Програма дозволяє додавати контакти з іменами та телефонами, переглядати список контактів та виходити з програми.
+A command-line personal assistant application that helps you manage contacts and notes. 
 
-## Компоненти
-- Базова структура проекту
-- Управління контактами (додавання, перегляд)
-- Простий інтерфейс командного рядка
+## Features
+
+### Contact Management
+- Add new contacts with names, addresses, phone numbers, email, and birthdays
+- Search contacts by various criteria (e.g., by name)
+- Edit and delete contacts
+- Display contacts with upcoming birthdays
+- Validate phone numbers and email addresses
 
 ## Використання
 1. Запустіть програму:
