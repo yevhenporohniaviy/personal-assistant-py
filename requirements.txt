@@ -1,0 +1,2 @@
+# Dependencies for Personal Assistant
+# No external dependencies required for the first stage
