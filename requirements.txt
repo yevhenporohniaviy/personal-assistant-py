@@ -1,0 +1,3 @@
+# Dependencies for Personal Assistant
+python-dateutil>=2.8.2
+pickle-mixin>=1.0.2
