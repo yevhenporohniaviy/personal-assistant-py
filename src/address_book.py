@@ -1,6 +1,7 @@
 from collections import UserDict
 from src.record import ContactRecord
 from src.utils.storage import Storage
+from src.utils.color_formatter import ColorFormatter
 from datetime import datetime, timedelta
 
 class AddressBook(UserDict):
@@ -82,11 +83,11 @@ class AddressBook(UserDict):
     
     def __str__(self):
         if not self.data:
-            return "Address book is empty"
+            return ColorFormatter.warning("Address book is empty")
         
-        result = ["Address Book:"]
+        result = [ColorFormatter.bold("Address Book:")]
         for record in self.data.values():
             result.append(str(record))
-            result.append("-" * 30)
+            result.append(ColorFormatter.info("-" * 30))
         
         return "\n".join(result)
