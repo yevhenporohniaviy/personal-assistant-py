@@ -1,8 +1,8 @@
 from collections import UserDict
 from src.record import ContactRecord
 from src.utils.storage import Storage
-from src.utils.color_formatter import ColorFormatter
 from datetime import datetime, timedelta
+from io import StringIO
 
 class AddressBook(UserDict):
     """Class for storing and managing contacts"""
@@ -13,6 +13,34 @@ class AddressBook(UserDict):
         data = self.storage.load()
         if data:
             self.data = data
+            # Migrate old records if needed
+            self._migrate_records()
+    
+    def _migrate_records(self):
+        """Migrate old Record objects to ContactRecord"""
+        migrated = False
+        for name, record in list(self.data.items()):
+            # Check if record is not a ContactRecord or doesn't have required attributes
+            if not hasattr(record, 'phones') or not hasattr(record, 'emails'):
+                # Create a new ContactRecord
+                new_record = ContactRecord(record.name.value)
+                # Copy any available attributes
+                if hasattr(record, 'birthday'):
+                    new_record.birthday = record.birthday
+                if hasattr(record, 'address'):
+                    new_record.address = record.address
+                if hasattr(record, 'created_at'):
+                    new_record.created_at = record.created_at
+                if hasattr(record, 'updated_at'):
+                    new_record.updated_at = record.updated_at
+                
+                # Replace old record with new one
+                self.data[name] = new_record
+                migrated = True
+        
+        # Save changes if any records were migrated
+        if migrated:
+            self.save()
     
     def add_record(self, record):
         """Add a new contact record to the address book"""
@@ -82,12 +110,15 @@ class AddressBook(UserDict):
         return self.storage.save(self.data)
     
     def __str__(self):
+        """String representation of the address book"""
+        output = StringIO()
+        
         if not self.data:
-            return ColorFormatter.warning("Address book is empty")
+            return "Address book is empty"
         
-        result = [ColorFormatter.bold("Address Book:")]
+        output.write("Address Book:\n")
         for record in self.data.values():
-            result.append(str(record))
-            result.append(ColorFormatter.info("-" * 30))
+            output.write(f"{record}\n")
+            output.write("-" * 30 + "\n")
         
-        return "\n".join(result)
+        return output.getvalue().strip()

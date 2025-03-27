@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from src.field import Name, Phone, Email, Address, Birthday, Tag
-from src.utils.color_formatter import ColorFormatter
+from io import StringIO
 
 class Record:
     """Base class for records in address book and note book"""
@@ -103,31 +103,33 @@ class ContactRecord(Record):
         return days_remaining
 
     def __str__(self):
-        result = [ColorFormatter.bold(f"Contact: {self.name}")]
+        output = StringIO()
+        
+        output.write(f"Contact: {self.name}\n")
         
         if self.phones:
-            result.append(ColorFormatter.info("Phones:"))
+            output.write("Phones:\n")
             for phone in self.phones:
-                result.append(ColorFormatter.info(f"  {phone}"))
+                output.write(f"  {phone}\n")
         
         if self.emails:
-            result.append(ColorFormatter.info("Emails:"))
+            output.write("Emails:\n")
             for email in self.emails:
-                result.append(ColorFormatter.info(f"  {email}"))
+                output.write(f"  {email}\n")
         
         if self.address:
-            result.append(ColorFormatter.info(f"Address: {self.address}"))
+            output.write(f"Address: {self.address}\n")
         
         if self.birthday:
-            result.append(ColorFormatter.info(f"Birthday: {self.birthday}"))
+            output.write(f"Birthday: {self.birthday}\n")
             days = self.days_to_birthday()
             if days is not None:
                 if days == 0:
-                    result.append(ColorFormatter.highlight("🎂 Today is the birthday! 🎉"))
+                    output.write("🎂 Today is the birthday! 🎉\n")
                 else:
-                    result.append(ColorFormatter.info(f"Days to birthday: {days}"))
+                    output.write(f"Days to birthday: {days}\n")
         
-        return "\n".join(result)
+        return output.getvalue().strip()
 
 class NoteRecord(Record):
     """Class for note records in note book"""
@@ -166,17 +168,19 @@ class NoteRecord(Record):
         self.updated_at = datetime.now()
 
     def __str__(self):
-        result = [ColorFormatter.bold(f"Note: {self.name}")]
+        output = StringIO()
+        
+        output.write(f"Note: {self.name}\n")
         
         if self.content:
-            result.append(ColorFormatter.info(f"Content: {self.content}"))
+            output.write(f"Content: {self.content}\n")
         
         if self.tags:
-            result.append(ColorFormatter.info("Tags:"))
+            output.write("Tags:\n")
             for tag in self.tags:
-                result.append(ColorFormatter.highlight(f"  {tag}"))
+                output.write(f"  #{tag.value}\n")
         
-        result.append(ColorFormatter.info(f"Created: {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}"))
-        result.append(ColorFormatter.info(f"Updated: {self.updated_at.strftime('%Y-%m-%d %H:%M:%S')}"))
+        output.write(f"Created: {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        output.write(f"Updated: {self.updated_at.strftime('%Y-%m-%d %H:%M:%S')}")
         
-        return "\n".join(result)
+        return output.getvalue().strip()

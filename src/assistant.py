@@ -1,6 +1,6 @@
 from src.address_book import AddressBook
 from src.note_book import NoteBook
-from src.record import Record, NoteRecord
+from src.record import ContactRecord, NoteRecord
 from src.utils.input_parser import InputParser
 from src.utils.localization import Localization
 from src.utils.rich_formatter import RichFormatter
@@ -184,7 +184,7 @@ class Assistant:
                 return
             
             # Create a new contact record
-            record = Record(name)
+            record = ContactRecord(name)
             
             # Add phone numbers
             while True:
@@ -211,7 +211,7 @@ class Assistant:
             birthday = RichFormatter.ask_input("Enter birthday (YYYY-MM-DD, leave empty to skip): ")
             if birthday:
                 try:
-                    record.add_birthday(birthday)
+                    record.set_birthday(birthday)
                 except ValueError as e:
                     RichFormatter.print_error(f"Error: {e}")
             

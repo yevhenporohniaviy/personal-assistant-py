@@ -43,32 +43,38 @@ class RichFormatter:
     @staticmethod
     def display_contact(contact):
         """Display contact information in a rich panel"""
+        # Check if contact has required attributes
+        if not hasattr(contact, 'name'):
+            RichFormatter.print_error("Invalid contact object: 'name' attribute missing")
+            return
+        
         content = Text()
         content.append(f"Name: {contact.name.value}\n", style="bold cyan")
         
-        if contact.phones:
+        if hasattr(contact, 'phones') and contact.phones:
             content.append("Phones:\n", style="blue")
             for phone in contact.phones:
                 content.append(f"  {phone.value}\n", style="cyan")
         
-        if contact.emails:
+        if hasattr(contact, 'emails') and contact.emails:
             content.append("Emails:\n", style="blue")
             for email in contact.emails:
                 content.append(f"  {email.value}\n", style="cyan")
         
-        if contact.address:
+        if hasattr(contact, 'address') and contact.address:
             content.append("Address:\n", style="blue")
             content.append(f"  {contact.address.value}\n", style="cyan")
         
-        if contact.birthday:
+        if hasattr(contact, 'birthday') and contact.birthday:
             content.append("Birthday:\n", style="blue")
             content.append(f"  {contact.birthday.value}\n", style="cyan")
-            days = contact.days_to_birthday()
-            if days is not None:
-                if days == 0:
-                    content.append("  🎂 Today is the birthday! 🎉\n", style="bold magenta")
-                else:
-                    content.append(f"  Days to birthday: {days}\n", style="cyan")
+            if hasattr(contact, 'days_to_birthday'):
+                days = contact.days_to_birthday()
+                if days is not None:
+                    if days == 0:
+                        content.append("  🎂 Today is the birthday! 🎉\n", style="bold magenta")
+                    else:
+                        content.append(f"  Days to birthday: {days}\n", style="cyan")
         
         RichFormatter.console.print(Panel(
             content,
@@ -80,19 +86,26 @@ class RichFormatter:
     @staticmethod
     def display_note(note):
         """Display note information in a rich panel"""
+        # Check if note has required attributes
+        if not hasattr(note, 'name'):
+            RichFormatter.print_error("Invalid note object: 'name' attribute missing")
+            return
+            
         content = Text()
         
-        if note.content:
+        if hasattr(note, 'content') and note.content:
             content.append(f"Content:\n{note.content}\n\n", style="white")
         
-        if note.tags:
+        if hasattr(note, 'tags') and note.tags:
             content.append("Tags: ", style="blue")
             for i, tag in enumerate(note.tags):
                 content.append(f"#{tag.value} ", style="magenta")
             content.append("\n")
         
-        content.append(f"Created: {note.created_at.strftime('%Y-%m-%d %H:%M:%S')}\n", style="dim")
-        content.append(f"Updated: {note.updated_at.strftime('%Y-%m-%d %H:%M:%S')}", style="dim")
+        if hasattr(note, 'created_at'):
+            content.append(f"Created: {note.created_at.strftime('%Y-%m-%d %H:%M:%S')}\n", style="dim")
+        if hasattr(note, 'updated_at'):
+            content.append(f"Updated: {note.updated_at.strftime('%Y-%m-%d %H:%M:%S')}", style="dim")
         
         RichFormatter.console.print(Panel(
             content,
@@ -111,11 +124,25 @@ class RichFormatter:
         table.add_column("Birthday", style="magenta")
         
         for contact in contacts:
-            phones = ", ".join([phone.value for phone in contact.phones]) if contact.phones else ""
-            email = contact.emails[0].value if contact.emails else ""
-            birthday = contact.birthday.value if contact.birthday else ""
+            # Skip invalid contacts
+            if not hasattr(contact, 'name'):
+                continue
+                
+            name = contact.name.value if hasattr(contact, 'name') else "Unknown"
             
-            table.add_row(contact.name.value, phones, email, birthday)
+            phones = ""
+            if hasattr(contact, 'phones') and contact.phones:
+                phones = ", ".join([phone.value for phone in contact.phones])
+            
+            email = ""
+            if hasattr(contact, 'emails') and contact.emails:
+                email = contact.emails[0].value
+            
+            birthday = ""
+            if hasattr(contact, 'birthday') and contact.birthday:
+                birthday = contact.birthday.value
+            
+            table.add_row(name, phones, email, birthday)
         
         RichFormatter.console.print(table)
     
@@ -128,10 +155,21 @@ class RichFormatter:
         table.add_column("Tags", style="magenta")
         
         for note in notes:
-            content_preview = (note.content[:30] + "...") if len(note.content) > 30 else note.content
-            tags = " ".join([f"#{tag.value}" for tag in note.tags]) if note.tags else ""
+            # Skip invalid notes
+            if not hasattr(note, 'name'):
+                continue
+                
+            name = note.name.value if hasattr(note, 'name') else "Unknown"
             
-            table.add_row(note.name.value, content_preview, tags)
+            content_preview = ""
+            if hasattr(note, 'content') and note.content:
+                content_preview = (note.content[:30] + "...") if len(note.content) > 30 else note.content
+            
+            tags = ""
+            if hasattr(note, 'tags') and note.tags:
+                tags = " ".join([f"#{tag.value}" for tag in note.tags])
+            
+            table.add_row(name, content_preview, tags)
         
         RichFormatter.console.print(table)
 
