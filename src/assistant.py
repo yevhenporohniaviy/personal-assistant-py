@@ -1,35 +1,55 @@
 from src.address_book import AddressBook
-from src.record import Record
+from src.note_book import NoteBook
+from src.record import Record, NoteRecord
+from src.utils.input_parser import InputParser
+from src.utils.localization import Localization
 
 class Assistant:
     """Main assistant class that handles user interaction"""
     def __init__(self):
         self.address_book = AddressBook()
+        self.note_book = NoteBook()
         self.running = False
+        self.localization = Localization()
+        
+        # Define available commands
+        self.commands = [
+            "add contact", "show all", "search contacts", "edit contact", "delete contact", "birthdays",
+            "add note", "search notes", "edit note", "delete note", "add tag", "search by tag", "sort by tags",
+            "help", "exit", "quit", "q", "change language"
+        ]
+        
+        # Initialize input parser
+        self.input_parser = InputParser(self.commands)
     
     def run(self):
         """Run the main loop of the assistant"""
         self.running = True
-        print("Welcome to the Personal Assistant!")
+        print(self.localization.get_text("welcome"))
         self.show_help()
         
         while self.running:
             try:
-                command = input("Enter a command: ").strip().lower()
-                self.process_command(command)
+                user_input = input(self.localization.get_text("enter_command")).strip()
+                self.process_command(user_input)
             except KeyboardInterrupt:
                 print("\nGoodbye!")
                 self.running = False
             except Exception as e:
-                print(f"Error: {e}")
+                print(self.localization.get_text("error").format(str(e)))
     
-    def process_command(self, command):
-        """Process user command"""
+    def process_command(self, user_input):
+        """Process user command with intelligent parsing"""
+        # Parse the input
+        command, args = self.input_parser.parse_input(user_input)
+        
+        # Process the command
         if command in ["exit", "quit", "q"]:
-            print("Goodbye!")
+            print(self.localization.get_text("goodbye"))
             self.running = False
         elif command == "help":
             self.show_help()
+        # Contact commands
         elif command == "add contact":
             self.add_contact()
         elif command == "show all":
@@ -42,21 +62,64 @@ class Assistant:
             self.delete_contact()
         elif command == "birthdays":
             self.show_upcoming_birthdays()
+        # Note commands
+        elif command == "add note":
+            self.add_note()
+        elif command == "search notes":
+            self.search_notes()
+        elif command == "edit note":
+            self.edit_note()
+        elif command == "delete note":
+            self.delete_note()
+        elif command == "add tag":
+            self.add_tag_to_note()
+        elif command == "search by tag":
+            self.search_notes_by_tag()
+        elif command == "sort by tags":
+            self.sort_notes_by_tags()
+        elif command == "change language":
+            self.change_language()
         else:
-            print("Unknown command. Type 'help' for available commands.")
+            # Try to guess the command
+            guessed_command = self.input_parser.guess_command(user_input)
+            
+            if guessed_command:
+                # Get the translated command name for display
+                display_command = self.localization.get_text(guessed_command) if guessed_command in self.localization.translations[self.localization.current_language] else guessed_command
+                confirm_msg = self.localization.get_text("did_you_mean").format(display_command)
+                confirm = input(confirm_msg).strip().lower()
+                if confirm == 'y' or confirm == 'т': # 'т' is 'y' in Ukrainian
+                    self.process_command(guessed_command)
+                    return
+            
+            print(self.localization.get_text("command_not_recognized"))
     
     def show_help(self):
         """Show available commands"""
-        print("\nAvailable commands:")
-        print("  add contact - Add a new contact")
-        print("  show all - Show all contacts")
-        print("  search contacts - Search for contacts")
-        print("  edit contact - Edit an existing contact")
-        print("  delete contact - Delete a contact")
-        print("  birthdays - Show upcoming birthdays")
-        print("  help - Show this help message")
-        print("  exit/quit/q - Exit the program\n")
+        print(f"\n{self.localization.get_text('available_commands')}")
+        print("  Contact Management:")
+        for cmd in ["add contact", "show all", "search contacts", "edit contact", "delete contact", "birthdays"]:
+            desc_key = f"desc_{cmd.replace(' ', '_')}"
+            display_cmd = self.localization.get_text(cmd)
+            display_desc = self.localization.get_text(desc_key)
+            print(f"  {display_cmd} - {display_desc}")
+        
+        print("\n  Note Management:")
+        for cmd in ["add note", "search notes", "edit note", "delete note", "add tag", "search by tag", "sort by tags"]:
+            desc_key = f"desc_{cmd.replace(' ', '_')}"
+            display_cmd = self.localization.get_text(cmd)
+            display_desc = self.localization.get_text(desc_key)
+            print(f"  {display_cmd} - {display_desc}")
+        
+        print("\n  Other Commands:")
+        for cmd in ["help", "exit", "change language"]:
+            desc_key = f"desc_{cmd.replace(' ', '_')}"
+            display_cmd = self.localization.get_text(cmd)
+            display_desc = self.localization.get_text(desc_key)
+            print(f"  {display_cmd} - {display_desc}")
+        print()
     
+    # Contact management methods
     def add_contact(self):
         """Add a new contact"""
         try:
@@ -94,18 +157,18 @@ class Assistant:
                 except ValueError as e:
                     print(f"Error: {e}")
             
-            # Add address
-            address = input("Enter address (leave empty to skip): ").strip()
-            if address:
-                record.add_address(address)
-            
             # Add birthday
-            birthday = input("Enter birthday in DD.MM.YYYY format (leave empty to skip): ").strip()
+            birthday = input("Enter birthday (YYYY-MM-DD, leave empty to skip): ").strip()
             if birthday:
                 try:
                     record.add_birthday(birthday)
                 except ValueError as e:
                     print(f"Error: {e}")
+            
+            # Add address
+            address = input("Enter address (leave empty to skip): ").strip()
+            if address:
+                record.add_address(address)
             
             # Add the record to the address book
             self.address_book.add_record(record)
@@ -132,36 +195,33 @@ class Assistant:
             return
         
         results = self.address_book.search(query)
-        
         if not results:
-            print(f"No contacts found matching '{query}'.")
+            print("No contacts found.")
             return
         
-        print(f"\nFound {len(results)} contacts matching '{query}':")
+        print("\nFound contacts:")
         for record in results:
             print(record)
     
     def edit_contact(self):
         """Edit an existing contact"""
-        name = input("Enter the name of the contact to edit: ").strip()
-        if not name:
-            print("Name cannot be empty.")
-            return
-        
+        name = input("Enter contact name to edit: ").strip()
         record = self.address_book.find(name)
+        
         if not record:
             print(f"Contact '{name}' not found.")
             return
         
-        print(f"\nEditing contact: {record}")
+        print("\nCurrent contact information:")
+        print(record)
         
         while True:
             print("\nWhat would you like to edit?")
             print("1. Phone numbers")
             print("2. Email")
-            print("3. Address")
-            print("4. Birthday")
-            print("0. Done editing")
+            print("3. Birthday")
+            print("4. Address")
+            print("0. Done")
             
             choice = input("Enter your choice (0-4): ").strip()
             
@@ -172,31 +232,244 @@ class Assistant:
             elif choice == "2":
                 self._edit_email(record)
             elif choice == "3":
-                self._edit_address(record)
-            elif choice == "4":
                 self._edit_birthday(record)
+            elif choice == "4":
+                self._edit_address(record)
             else:
-                print("Invalid choice. Please try again.")
-        
-        # Save changes
-        self.address_book.save_to_file()
-        print(f"Contact '{name}' updated successfully.")
+                print("Invalid choice.")
     
-    def _edit_phones(self, record):
-        """Edit phone numbers for a contact"""
-        while True:
-            print("\nPhone numbers:")
-            if not record.phones:
-                print("No phone numbers.")
-            else:
-                for i, phone in enumerate(record.phones):
-                    print(f"{i+1}. {phone}")
+    def delete_contact(self):
+        """Delete a contact"""
+        name = input("Enter contact name to delete: ").strip()
+        if not name:
+            print("Name cannot be empty.")
+            return
+        
+        if self.address_book.delete(name):
+            print(f"Contact '{name}' deleted successfully.")
+        else:
+            print(f"Contact '{name}' not found.")
+    
+    def show_upcoming_birthdays(self):
+        """Show upcoming birthdays"""
+        days = input("Enter number of days to look ahead (default 7): ").strip()
+        days = int(days) if days.isdigit() else 7
+        
+        birthdays = self.address_book.get_upcoming_birthdays(days)
+        if not birthdays:
+            print(f"No birthdays in the next {days} days.")
+            return
+        
+        print(f"\nUpcoming birthdays in the next {days} days:")
+        for record in birthdays:
+            print(f"{record.name}: {record.birthday}")
+    
+    # Note management methods
+    def add_note(self):
+        """Add a new note"""
+        try:
+            title = input("Enter note title: ").strip()
+            if not title:
+                print("Title cannot be empty.")
+                return
             
-            print("\nWhat would you like to do?")
-            print("1. Add a new phone")
-            print("2. Edit an existing phone")
-            print("3. Delete a phone")
-            print("0. Back to main edit menu")
+            # Check if note already exists
+            if self.note_book.find(title):
+                print(f"Note with title '{title}' already exists.")
+                return
+            
+            content = input("Enter note content: ").strip()
+            if not content:
+                print("Content cannot be empty.")
+                return
+            
+            # Create a new note record
+            from src.record import NoteRecord
+            record = NoteRecord(title, content)
+            
+            # Add tags
+            while True:
+                tag = input("Enter tag (leave empty to finish): ").strip()
+                if not tag:
+                    break
+                record.add_tag(tag)
+            
+            # Add the record to the note book
+            self.note_book.add_record(record)
+            print(f"Note '{title}' added successfully.")
+            
+        except ValueError as e:
+            print(f"Error: {e}")
+    
+    def search_notes(self):
+        """Search for notes"""
+        query = input("Enter search query: ").strip()
+        if not query:
+            print("Search query cannot be empty.")
+            return
+        
+        notes = self.note_book.search(query)
+        if not notes:
+            print("No notes found.")
+            return
+        
+        print("\nFound notes:")
+        for note in notes:
+            print(note)
+            print("-" * 30)
+    
+    def edit_note(self):
+        """Edit a note"""
+        title = input("Enter note title to edit: ").strip()
+        note = self.note_book.find(title)
+        
+        if not note:
+            print(f"Note '{title}' not found.")
+            return
+        
+        print("\nCurrent note:")
+        print(note)
+        
+        new_content = input("Enter new content (leave empty to keep current): ").strip()
+        if new_content:
+            note.edit_content(new_content)
+            self.note_book.save()
+            print("Note content updated successfully.")
+            
+        # Ask if user wants to edit tags
+        edit_tags = input("Do you want to edit tags? (y/n): ").strip().lower()
+        if edit_tags == 'y':
+            self._edit_note_tags(note)
+            self.note_book.save()
+        
+        print("Note updated successfully.")
+    
+    def delete_note(self):
+        """Delete a note"""
+        title = input("Enter note title to delete: ").strip()
+        if not title:
+            print("Title cannot be empty.")
+            return
+        
+        if self.note_book.delete(title):
+            print(f"Note '{title}' deleted successfully.")
+        else:
+            print(f"Note '{title}' not found.")
+    
+    def add_tag_to_note(self):
+        """Add a tag to a note"""
+        title = input("Enter note title: ").strip()
+        note = self.note_book.find(title)
+        
+        if not note:
+            print(f"Note '{title}' not found.")
+            return
+        
+        tag = input("Enter tag to add: ").strip()
+        if not tag:
+            print("Tag cannot be empty.")
+            return
+        
+        if note.add_tag(tag):
+            self.note_book.save()
+            print(f"Tag '{tag}' added to note '{title}'")
+        else:
+            print(f"Tag '{tag}' already exists in note '{title}'")
+            
+    def _edit_note_tags(self, note):
+        """Helper method to edit note tags"""
+        while True:
+            print("\nCurrent tags:")
+            if note.tags:
+                for i, tag in enumerate(note.tags, 1):
+                    print(f"{i}. {tag}")
+            else:
+                print("No tags")
+            
+            print("\nOptions:")
+            print("1. Add new tag")
+            print("2. Remove tag")
+            print("0. Done")
+            
+            choice = input("Enter your choice (0-2): ").strip()
+            
+            if choice == "0":
+                break
+            elif choice == "1":
+                tag = input("Enter new tag: ").strip()
+                if tag:
+                    if note.add_tag(tag):
+                        print(f"Tag '{tag}' added.")
+                    else:
+                        print(f"Tag '{tag}' already exists.")
+                else:
+                    print("Tag cannot be empty.")
+            elif choice == "2":
+                if not note.tags:
+                    print("No tags to remove.")
+                    continue
+                
+                idx = input(f"Enter number to remove (1-{len(note.tags)}): ").strip()
+                if not idx.isdigit() or not 1 <= int(idx) <= len(note.tags):
+                    print("Invalid index.")
+                    continue
+                
+                tag = note.tags[int(idx)-1].value
+                if note.remove_tag(tag):
+                    print(f"Tag '{tag}' removed.")
+                else:
+                    print(f"Failed to remove tag '{tag}'.")
+            else:
+                print("Invalid choice.")
+    
+    def search_notes_by_tag(self):
+        """Search notes by tag"""
+        tag = input("Enter tag to search for: ").strip()
+        if not tag:
+            print("Tag cannot be empty.")
+            return
+        
+        notes = self.note_book.search_by_tag(tag)
+        if not notes:
+            print(f"No notes found with tag '{tag}'")
+            return
+        
+        print(f"\nNotes with tag '{tag}':")
+        for note in notes:
+            print(note)
+            print("-" * 30)
+    
+    def sort_notes_by_tags(self):
+        """Sort and display notes by tags"""
+        sorted_notes = self.note_book.sort_by_tags()
+        if not sorted_notes:
+            print("No notes found.")
+            return
+        
+        print("\nNotes sorted by tags:")
+        for tag, notes in sorted_notes.items():
+            if tag == "no_tags":
+                print("\nNotes without tags:")
+            else:
+                print(f"\nTag: #{tag}")
+            
+            for note in notes:
+                print(note)
+                print("-" * 30)
+    
+    # Helper methods for contact editing
+    def _edit_phones(self, record):
+        """Helper method to edit phone numbers"""
+        while True:
+            print("\nCurrent phone numbers:")
+            for i, phone in enumerate(record.phones, 1):
+                print(f"{i}. {phone}")
+            
+            print("\nOptions:")
+            print("1. Add new phone")
+            print("2. Edit existing phone")
+            print("3. Delete phone")
+            print("0. Done")
             
             choice = input("Enter your choice (0-3): ").strip()
             
@@ -206,7 +479,7 @@ class Assistant:
                 phone = input("Enter new phone number: ").strip()
                 try:
                     record.add_phone(phone)
-                    print(f"Phone number '{phone}' added.")
+                    print("Phone number added.")
                 except ValueError as e:
                     print(f"Error: {e}")
             elif choice == "2":
@@ -214,155 +487,76 @@ class Assistant:
                     print("No phone numbers to edit.")
                     continue
                 
-                idx = input(f"Enter the number of the phone to edit (1-{len(record.phones)}): ").strip()
+                idx = input("Enter number to edit (1-{}): ".format(len(record.phones))).strip()
+                if not idx.isdigit() or not 1 <= int(idx) <= len(record.phones):
+                    print("Invalid index.")
+                    continue
+                
+                new_phone = input("Enter new phone number: ").strip()
                 try:
-                    idx = int(idx) - 1
-                    if idx < 0 or idx >= len(record.phones):
-                        print("Invalid index.")
-                        continue
-                    
-                    old_phone = record.phones[idx].value
-                    new_phone = input(f"Enter new phone number to replace {old_phone}: ").strip()
-                    
-                    if record.edit_phone(old_phone, new_phone):
-                        print(f"Phone number updated from '{old_phone}' to '{new_phone}'.")
-                    else:
-                        print(f"Failed to update phone number.")
-                except ValueError:
-                    print("Invalid input. Please enter a number.")
+                    record.edit_phone(int(idx)-1, new_phone)
+                    print("Phone number updated.")
+                except ValueError as e:
+                    print(f"Error: {e}")
             elif choice == "3":
                 if not record.phones:
                     print("No phone numbers to delete.")
                     continue
                 
-                idx = input(f"Enter the number of the phone to delete (1-{len(record.phones)}): ").strip()
-                try:
-                    idx = int(idx) - 1
-                    if idx < 0 or idx >= len(record.phones):
-                        print("Invalid index.")
-                        continue
-                    
-                    phone = record.phones[idx].value
-                    if record.remove_phone(phone):
-                        print(f"Phone number '{phone}' deleted.")
-                    else:
-                        print(f"Failed to delete phone number.")
-                except ValueError:
-                    print("Invalid input. Please enter a number.")
+                idx = input("Enter number to delete (1-{}): ".format(len(record.phones))).strip()
+                if not idx.isdigit() or not 1 <= int(idx) <= len(record.phones):
+                    print("Invalid index.")
+                    continue
+                
+                record.delete_phone(int(idx)-1)
+                print("Phone number deleted.")
             else:
-                print("Invalid choice. Please try again.")
+                print("Invalid choice.")
     
     def _edit_email(self, record):
-        """Edit email for a contact"""
-        print(f"Current email: {record.email if record.email else 'Not set'}")
-        
-        choice = input("Do you want to (1) add/update or (2) remove email? (1/2/cancel): ").strip().lower()
-        
-        if choice == "1":
-            email = input("Enter new email: ").strip()
-            try:
-                record.add_email(email)
-                print(f"Email updated to '{email}'.")
-            except ValueError as e:
-                print(f"Error: {e}")
-        elif choice == "2":
-            record.email = None
-            print("Email removed.")
-        elif choice.lower() == "cancel":
-            return
-        else:
-            print("Invalid choice.")
-    
-    def _edit_address(self, record):
-        """Edit address for a contact"""
-        print(f"Current address: {record.address if record.address else 'Not set'}")
-        
-        choice = input("Do you want to (1) add/update or (2) remove address? (1/2/cancel): ").strip().lower()
-        
-        if choice == "1":
-            address = input("Enter new address: ").strip()
-            record.add_address(address)
-            print(f"Address updated to '{address}'.")
-        elif choice == "2":
-            record.address = None
-            print("Address removed.")
-        elif choice.lower() == "cancel":
-            return
-        else:
-            print("Invalid choice.")
-    
-    def _edit_birthday(self, record):
-        """Edit birthday for a contact"""
-        print(f"Current birthday: {record.birthday if record.birthday else 'Not set'}")
-        
-        choice = input("Do you want to (1) add/update or (2) remove birthday? (1/2/cancel): ").strip().lower()
-        
-        if choice == "1":
-            birthday = input("Enter new birthday (DD.MM.YYYY): ").strip()
-            try:
-                record.add_birthday(birthday)
-                print(f"Birthday updated to '{birthday}'.")
-            except ValueError as e:
-                print(f"Error: {e}")
-        elif choice == "2":
-            record.birthday = None
-            print("Birthday removed.")
-        elif choice.lower() == "cancel":
-            return
-        else:
-            print("Invalid choice.")
-    
-    def delete_contact(self):
-        """Delete a contact"""
-        name = input("Enter the name of the contact to delete: ").strip()
-        if not name:
-            print("Name cannot be empty.")
-            return
-        
-        record = self.address_book.find(name)
-        if not record:
-            print(f"Contact '{name}' not found.")
-            return
-        
-        print(f"\nContact to delete: {record}")
-        confirm = input(f"Are you sure you want to delete contact '{name}'? (y/n): ").strip().lower()
-        
-        if confirm == 'y':
-            if self.address_book.delete(name):
-                print(f"Contact '{name}' deleted successfully.")
-            else:
-                print(f"Failed to delete contact '{name}'.")
-        else:
-            print("Deletion cancelled.")
-    
-    def show_upcoming_birthdays(self):
-        """Show upcoming birthdays"""
-        days = input("Enter number of days to check for upcoming birthdays (default 7): ").strip()
+        """Helper method to edit email"""
+        print(f"Current email: {record.email if record.email else 'None'}")
+        email = input("Enter new email (leave empty to remove): ").strip()
         
         try:
-            days = int(days) if days else 7
-            if days <= 0:
-                print("Number of days must be positive.")
-                return
-        except ValueError:
-            print("Invalid input. Using default value of 7 days.")
-            days = 7
-        
-        upcoming = self.address_book.get_upcoming_birthdays(days)
-        
-        if not upcoming:
-            print(f"No birthdays in the next {days} days.")
-            return
-        
-        print(f"\nUpcoming birthdays in the next {days} days:")
-        for record, days_left in upcoming:
-            print(f"{record.name.value}: {record.birthday.value} (in {days_left} days)")
+            if email:
+                record.add_email(email)
+                print("Email updated.")
+            elif record.email:
+                record.remove_email()
+                print("Email removed.")
+        except ValueError as e:
+            print(f"Error: {e}")
     
-    def find_contact(self, name):
-        """Find a contact by name"""
-        record = self.address_book.find(name)
-        if record:
-            print(f"\nFound contact:")
-            print(record)
-        else:
-            print(f"Contact '{name}' not found.")
+    def _edit_birthday(self, record):
+        """Helper method to edit birthday"""
+        print(f"Current birthday: {record.birthday if record.birthday else 'None'}")
+        birthday = input("Enter new birthday (YYYY-MM-DD, leave empty to remove): ").strip()
+        
+        try:
+            if birthday:
+                record.add_birthday(birthday)
+                print("Birthday updated.")
+            elif record.birthday:
+                record.remove_birthday()
+                print("Birthday removed.")
+        except ValueError as e:
+            print(f"Error: {e}")
+    
+    def _edit_address(self, record):
+        """Helper method to edit address"""
+        print(f"Current address: {record.address if record.address else 'None'}")
+        address = input("Enter new address (leave empty to remove): ").strip()
+        
+        if address:
+            record.add_address(address)
+            print("Address updated.")
+        elif record.address:
+            record.remove_address()
+            print("Address removed.")
+            
+    def change_language(self):
+        """Change the interface language"""
+        if self.localization.change_language():
+            # Reinitialize the input parser to update command mappings
+            self.input_parser = InputParser(self.commands)
