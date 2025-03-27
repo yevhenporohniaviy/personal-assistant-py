@@ -48,6 +48,7 @@ class Localization:
                 "help": "help",
                 "exit": "exit",
                 "change language": "change language",
+                "show all": "show all",
                 
                 # Command descriptions
                 "desc_add_contact": "Add a new contact",
@@ -65,6 +66,7 @@ class Localization:
                 "desc_help": "Show available commands",
                 "desc_exit": "Exit the program",
                 "desc_change_language": "Change interface language",
+                "desc_show_all": "Show all contacts",
                 
                 # UI strings
                 "welcome": "Welcome to Personal Assistant!",
@@ -133,6 +135,7 @@ class Localization:
                 "help": "допомога",
                 "exit": "вихід",
                 "change language": "змінити мову",
+                "show all": "показати все",
                 
                 # Contact management messages
                 "contact_added": "Контакт успішно додано.",
@@ -179,7 +182,7 @@ class Localization:
                 "desc_help": "Показати доступні команди",
                 "desc_exit": "Вийти з програми",
                 "desc_change_language": "Змінити мову інтерфейсу",
-
+                "desc_show_all": "Показати всі контакти",
                 
                 # UI strings
                 "welcome": "Ласкаво просимо до Персонального Помічника!",
@@ -248,6 +251,23 @@ class Localization:
                 # Return the same key from the English translations
                 return key
         return translated_command
+    
+    def get_available_languages(self):
+        """
+        Return dictionary of available languages
+        """
+        return self.languages
+    
+    def set_language(self, language_code):
+        """
+        Set language directly by language code
+        """
+        if language_code in self.languages:
+            self.current_language = language_code
+            # Save language preference
+            self.storage.save(self.current_language)
+            return True
+        return False
     
     def change_language(self):
         """
