@@ -80,23 +80,55 @@ class Assistant:
         elif command == "change language":
             self.change_language()
         else:
-            # Try to guess the command
-            guessed_command = self.input_parser.guess_command(user_input)
+            # Try to guess the command with improved algorithm
+            guessed_commands = self.input_parser.guess_commands(user_input)
             
-            if guessed_command:
-                # Get the translated command name for display
-                display_command = self.localization.get_text(guessed_command) if guessed_command in self.localization.translations[self.localization.current_language] else guessed_command
-                confirm_msg = self.localization.get_text("did_you_mean").format(display_command)
-                confirm = input(confirm_msg).strip().lower()
-                if confirm == 'y' or confirm == 'т': # 'т' is 'y' in Ukrainian
-                    self.process_command(guessed_command)
-                    return
+            if guessed_commands:
+                if len(guessed_commands) == 1:
+                    # Single suggestion
+                    guessed_command = guessed_commands[0]
+                    display_command = self.localization.get_text(guessed_command)
+                    confirm_msg = self.localization.get_text("did_you_mean").format(display_command)
+                    confirm = input(confirm_msg).strip().lower()
+                    if confirm == 'y' or confirm == 'т': # 'т' is 'y' in Ukrainian
+                        self.process_command(guessed_command)
+                        return
+                else:
+                    # Multiple suggestions
+                    print(self.localization.get_text("multiple_suggestions"))
+                    for i, cmd in enumerate(guessed_commands, 1):
+                        display_command = self.localization.get_text(cmd)
+                        print(f"{i}. {display_command}")
+                    
+                    choice = input(self.localization.get_text("select_suggestion")).strip()
+                    try:
+                        idx = int(choice) - 1
+                        if 0 <= idx < len(guessed_commands):
+                            self.process_command(guessed_commands[idx])
+                            return
+                    except ValueError:
+                        pass
             
+            # Show context-sensitive help
             print(self.localization.get_text("command_not_recognized"))
+            self.show_help(user_input)
     
-    def show_help(self):
-        """Show available commands"""
+    def show_help(self, context=None):
+        """Show available commands with context-aware help"""
         print(f"\n{self.localization.get_text('available_commands')}")
+        
+        # Get commands and descriptions in current language
+        commands = self.localization.get_command_dict()
+        
+        # Show context-specific help if context is provided
+        if context:
+            relevant_commands = [cmd for cmd in commands.items() if context.lower() in cmd[0].lower()]
+            if relevant_commands:
+                for cmd, desc in relevant_commands:
+                    print(f"  {cmd}: {desc}")
+                return
+        
+        # Show full help organized by category
         print("  Contact Management:")
         for cmd in ["add contact", "show all", "search contacts", "edit contact", "delete contact", "birthdays"]:
             desc_key = f"desc_{cmd.replace(' ', '_')}"

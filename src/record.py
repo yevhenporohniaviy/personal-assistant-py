@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from src.field import Name, Phone, Email, Address, Birthday, Tag
+from src.utils.color_formatter import ColorFormatter
 
 class Record:
     """Base class for records in address book and note book"""
@@ -102,26 +103,29 @@ class ContactRecord(Record):
         return days_remaining
 
     def __str__(self):
-        result = [f"Contact: {self.name}"]
+        result = [ColorFormatter.bold(f"Contact: {self.name}")]
         
         if self.phones:
-            result.append("Phones:")
+            result.append(ColorFormatter.info("Phones:"))
             for phone in self.phones:
-                result.append(f"  {phone}")
+                result.append(ColorFormatter.info(f"  {phone}"))
         
         if self.emails:
-            result.append("Emails:")
+            result.append(ColorFormatter.info("Emails:"))
             for email in self.emails:
-                result.append(f"  {email}")
+                result.append(ColorFormatter.info(f"  {email}"))
         
         if self.address:
-            result.append(f"Address: {self.address}")
+            result.append(ColorFormatter.info(f"Address: {self.address}"))
         
         if self.birthday:
-            result.append(f"Birthday: {self.birthday}")
+            result.append(ColorFormatter.info(f"Birthday: {self.birthday}"))
             days = self.days_to_birthday()
             if days is not None:
-                result.append(f"Days to birthday: {days}")
+                if days == 0:
+                    result.append(ColorFormatter.highlight("🎂 Today is the birthday! 🎉"))
+                else:
+                    result.append(ColorFormatter.info(f"Days to birthday: {days}"))
         
         return "\n".join(result)
 
@@ -162,17 +166,17 @@ class NoteRecord(Record):
         self.updated_at = datetime.now()
 
     def __str__(self):
-        result = [f"Note: {self.name}"]
+        result = [ColorFormatter.bold(f"Note: {self.name}")]
         
         if self.content:
-            result.append(f"Content: {self.content}")
+            result.append(ColorFormatter.info(f"Content: {self.content}"))
         
         if self.tags:
-            result.append("Tags:")
+            result.append(ColorFormatter.info("Tags:"))
             for tag in self.tags:
-                result.append(f"  {tag}")
+                result.append(ColorFormatter.highlight(f"  {tag}"))
         
-        result.append(f"Created: {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
-        result.append(f"Updated: {self.updated_at.strftime('%Y-%m-%d %H:%M:%S')}")
+        result.append(ColorFormatter.info(f"Created: {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}"))
+        result.append(ColorFormatter.info(f"Updated: {self.updated_at.strftime('%Y-%m-%d %H:%M:%S')}"))
         
         return "\n".join(result)

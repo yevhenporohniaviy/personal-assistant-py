@@ -77,7 +77,44 @@ class Localization:
                 "did_you_mean": "Did you mean '{}'? (y/n): ",
                 "goodbye": "Goodbye! Have a nice day!",
                 "language_changed": "Language changed to English.",
-                "select_language": "Select language:\n1. English\n2. Українська\nEnter number: "
+                "select_language": "Select language:\n1. English\n2. Українська\nEnter number: ",
+                "multiple_suggestions": "Did you mean one of these?",
+                "select_suggestion": "Enter number (or press Enter to skip): ",
+                "search_results": "Search results:",
+                "no_results": "No results found.",
+                "search_query": "Enter search query: ",
+                "search_criteria": "Search by:\n1. Name\n2. Phone\n3. Email\n4. Address\nEnter number: ",
+                "tag_search_criteria": "Search by:\n1. Tag name\n2. Note content\nEnter number: ",
+                "sort_criteria": "Sort by:\n1. Name\n2. Date\n3. Tags\nEnter number: ",
+                
+                # Contact management
+                "contact_added": "Contact added successfully.",
+                "contact_deleted": "Contact deleted successfully.",
+                "contact_updated": "Contact updated successfully.",
+                "contact_not_found": "Contact not found.",
+                "enter_name": "Enter name: ",
+                "enter_phone": "Enter phone number: ",
+                "enter_email": "Enter email: ",
+                "enter_birthday": "Enter birthday (YYYY-MM-DD): ",
+                "enter_address": "Enter address: ",
+                "invalid_phone": "Invalid phone number format.",
+                "invalid_email": "Invalid email format.",
+                "invalid_date": "Invalid date format.",
+                "upcoming_birthdays": "Upcoming birthdays in the next {days} days:",
+                "no_birthdays": "No upcoming birthdays.",
+                
+                # Note management
+                "note_added": "Note added successfully.",
+                "note_deleted": "Note deleted successfully.",
+                "note_updated": "Note updated successfully.",
+                "note_not_found": "Note not found.",
+                "enter_note_name": "Enter note name: ",
+                "enter_note_content": "Enter note content: ",
+                "enter_tag": "Enter tag: ",
+                "tag_added": "Tag added successfully.",
+                "no_notes_found": "No notes found.",
+                "notes_by_tag": "Notes by tag:",
+                "no_tags": "Notes without tags:"
             },
             "uk": {
                 # Command names
@@ -97,6 +134,35 @@ class Localization:
                 "exit": "вихід",
                 "change language": "змінити мову",
                 
+                # Contact management messages
+                "contact_added": "Контакт успішно додано.",
+                "contact_deleted": "Контакт успішно видалено.",
+                "contact_updated": "Контакт успішно оновлено.",
+                "contact_not_found": "Контакт не знайдено.",
+                "enter_name": "Введіть ім'я: ",
+                "enter_phone": "Введіть номер телефону: ",
+                "enter_email": "Введіть email: ",
+                "enter_birthday": "Введіть дату народження (РРРР-ММ-ДД): ",
+                "enter_address": "Введіть адресу: ",
+                "invalid_phone": "Неправильний формат номера телефону.",
+                "invalid_email": "Неправильний формат email.",
+                "invalid_date": "Неправильний формат дати.",
+                "upcoming_birthdays": "Найближчі дні народження протягом {days} днів:",
+                "no_birthdays": "Немає найближчих днів народження.",
+                
+                # Note management messages
+                "note_added": "Нотатку успішно додано.",
+                "note_deleted": "Нотатку успішно видалено.",
+                "note_updated": "Нотатку успішно оновлено.",
+                "note_not_found": "Нотатку не знайдено.",
+                "enter_note_name": "Введіть назву нотатки: ",
+                "enter_note_content": "Введіть вміст нотатки: ",
+                "enter_tag": "Введіть тег: ",
+                "tag_added": "Тег успішно додано.",
+                "no_notes_found": "Нотаток не знайдено.",
+                "notes_by_tag": "Нотатки за тегом:",
+                "no_tags": "Нотатки без тегів:",
+                
                 # Command descriptions
                 "desc_add_contact": "Додати новий контакт",
                 "desc_search_contacts": "Пошук контактів",
@@ -113,6 +179,7 @@ class Localization:
                 "desc_help": "Показати доступні команди",
                 "desc_exit": "Вийти з програми",
                 "desc_change_language": "Змінити мову інтерфейсу",
+
                 
                 # UI strings
                 "welcome": "Ласкаво просимо до Персонального Помічника!",
@@ -125,7 +192,21 @@ class Localization:
                 "did_you_mean": "Можливо, ви мали на увазі '{}'? (т/н): ",
                 "goodbye": "До побачення! Гарного дня!",
                 "language_changed": "Мову змінено на українську.",
-                "select_language": "Виберіть мову:\n1. English\n2. Українська\nВведіть номер: "
+                "select_language": "Виберіть мову:\n1. English\n2. Українська\nВведіть номер: ",
+                "multiple_suggestions": "Можливо, ви мали на увазі одну з цих команд?",
+                "select_suggestion": "Введіть номер (або натисніть Enter для пропуску): ",
+                "search_results": "Результати пошуку:",
+                "no_results": "Результатів не знайдено.",
+                "search_query": "Введіть пошуковий запит: ",
+                "search_criteria": "Пошук за:\n1. Ім'я\n2. Телефон\n3. Email\n4. Адреса\nВведіть номер: ",
+                "tag_search_criteria": "Пошук за:\n1. Назва тегу\n2. Вміст нотатки\nВведіть номер: ",
+                "sort_criteria": "Сортувати за:\n1. Ім'я\n2. Дата\n3. Теги\nВведіть номер: ",
+                "search_criteria": "Пошук за:\n1. Ім'я\n2. Телефон\n3. Email\n4. Адреса\nВведіть номер: ",
+                "tag_search_criteria": "Пошук за:\n1. Назва тегу\n2. Вміст нотатки\nВведіть номер: ",
+                "sort_criteria": "Сортувати за:\n1. Ім'я\n2. Дата\n3. Теги\nВведіть номер: ",
+                "search_criteria": "Шукати за:\n1. Ім'ям\n2. Телефоном\n3. Email\n4. Адресою\nВведіть номер: ",
+                "tag_search_criteria": "Шукати за:\n1. Назвою тегу\n2. Вмістом нотатки\nВведіть номер: ",
+                "sort_criteria": "Сортувати за:\n1. Ім'ям\n2. Датою\n3. Тегами\nВведіть номер: "
             }
         }
     
@@ -140,17 +221,21 @@ class Localization:
     def get_command_dict(self):
         """
         Get a dictionary of commands and their descriptions in the current language.
+        Returns commands sorted by relevance, with common prefixes prioritized.
         """
         commands = {}
-        for key, value in self.translations[self.current_language].items():
-            if key.startswith("desc_"):
-                # Get the command name from the description key
-                cmd_key = key[5:]  # Remove 'desc_' prefix
-                # Find the translated command name
-                for cmd, cmd_trans in self.translations[self.current_language].items():
-                    if cmd == cmd_key:
-                        commands[cmd_trans] = value
-                        break
+        # Get all command keys (excluding descriptions and internal keys)
+        command_keys = [key for key in self.translations["en"].keys() 
+                       if not key.startswith("desc_") and not key.startswith("_")]
+        
+        # Sort commands to prioritize common command prefixes (like 'add', 'search', etc)
+        command_keys.sort(key=lambda x: (x.split()[0] if ' ' in x else x, len(x)))
+        
+        for cmd in command_keys:
+            translated_cmd = self.get_text(cmd)
+            desc_key = f"desc_{cmd}"
+            if desc_key in self.translations[self.current_language]:
+                commands[translated_cmd] = self.translations[self.current_language][desc_key]
         return commands
     
     def get_original_command(self, translated_command):

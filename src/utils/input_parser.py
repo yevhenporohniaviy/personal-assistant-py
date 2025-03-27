@@ -93,3 +93,37 @@ class InputParser:
                     return original_cmd
         
         return None
+
+    def guess_commands(self, user_input):
+        """Try to guess multiple similar commands based on user input"""
+        first_word = user_input.strip().split()[0].lower() if user_input.strip() else ""
+        
+        if not first_word:
+            return []
+        
+        # Get list of all commands in current language
+        command_words = []
+        command_mapping = {}
+        
+        # Add original commands
+        for cmd in self.commands:
+            cmd_lower = cmd.lower()
+            command_words.append(cmd_lower)
+            command_mapping[cmd_lower] = cmd
+        
+        # Add translated commands
+        for translated_cmd, original_cmd in self.command_mapping.items():
+            translated_lower = translated_cmd.lower()
+            command_words.append(translated_lower)
+            command_mapping[translated_lower] = original_cmd
+        
+        # Find multiple close matches
+        matches = difflib.get_close_matches(first_word, command_words, n=5, cutoff=0.5)
+        
+        # Convert matches back to original commands
+        suggested_commands = []
+        for match in matches:
+            if match in command_mapping:
+                suggested_commands.append(command_mapping[match])
+        
+        return suggested_commands
