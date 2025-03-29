@@ -246,27 +246,35 @@ class Assistant:
                     break
                 try:
                     record.add_phone(phone)
-                    add_another = RichFormatter.ask_confirm("Add another phone?", False)
-                    if not add_another:
+                    if not RichFormatter.ask_input("Add another phone? [y/n] (n): ").lower().startswith('y'):
                         break
                 except ValueError as e:
                     RichFormatter.print_error(f"Error: {e}")
+                    continue
             
             # Add email
-            email = RichFormatter.ask_input("Enter email (leave empty to skip): ")
-            if email:
+            while True:
+                email = RichFormatter.ask_input("Enter email (leave empty to skip): ")
+                if not email:
+                    break
                 try:
                     record.add_email(email)
+                    break
                 except ValueError as e:
                     RichFormatter.print_error(f"Error: {e}")
+                    continue
             
             # Add birthday
-            birthday = RichFormatter.ask_input("Enter birthday (YYYY-MM-DD, leave empty to skip): ")
-            if birthday:
+            while True:
+                birthday = RichFormatter.ask_input("Enter birthday (YYYY-MM-DD, leave empty to skip): ")
+                if not birthday:
+                    break
                 try:
                     record.set_birthday(birthday)
+                    break
                 except ValueError as e:
                     RichFormatter.print_error(f"Error: {e}")
+                    continue
             
             # Add address
             address = RichFormatter.ask_input("Enter address (leave empty to skip): ")
@@ -723,92 +731,102 @@ class Assistant:
     def _edit_phones(self, record):
         """Helper method to edit contact phones"""
         while True:
-            # Display current phones
             if record.phones:
                 RichFormatter.print_info("Current phone numbers:")
                 for i, phone in enumerate(record.phones, 1):
                     RichFormatter.print_info(f"{i}. {phone.value}")
-            else:
-                RichFormatter.print_info("No phone numbers set.")
             
-            # Create options table
-            phone_table = Table(title="Phone Options", box=box.ROUNDED)
-            phone_table.add_column("Option", style="cyan")
-            phone_table.add_column("Description", style="white")
+            edit_table = Table(title="Phone Options", box=box.ROUNDED)
+            edit_table.add_column("Option", style="cyan")
+            edit_table.add_column("Description", style="white")
             
-            phone_table.add_row("1", "Add a phone number")
-            phone_table.add_row("2", "Edit a phone number")
-            phone_table.add_row("3", "Remove a phone number")
-            phone_table.add_row("4", "Done editing phones")
+            edit_table.add_row("1", "Add new phone")
+            edit_table.add_row("2", "Edit existing phone")
+            edit_table.add_row("3", "Remove phone")
+            edit_table.add_row("4", "Done")
             
-            RichFormatter.console.print(phone_table)
+            RichFormatter.console.print(edit_table)
             
             choice = RichFormatter.ask_input("Choose an option (1-4): ")
             
             if choice == "1":
-                phone = RichFormatter.ask_input("Enter new phone number: ")
-                if not phone:
-                    RichFormatter.print_error("Phone number cannot be empty.")
-                    continue
-                
-                try:
-                    record.add_phone(phone)
-                    self.address_book.save()
-                    RichFormatter.print_success(f"Phone number {phone} added successfully.")
-                except ValueError as e:
-                    RichFormatter.print_error(f"Error: {e}")
+                while True:
+                    phone = RichFormatter.ask_input("Enter new phone number: ")
+                    if not phone:
+                        RichFormatter.print_error("Phone number cannot be empty.")
+                        continue
+                    try:
+                        record.add_phone(phone)
+                        self.address_book.save()
+                        RichFormatter.print_success(f"Phone number {phone} added successfully.")
+                        break
+                    except ValueError as e:
+                        RichFormatter.print_error(f"Error: {e}")
+                        continue
             
             elif choice == "2":
                 if not record.phones:
                     RichFormatter.print_warning("No phone numbers to edit.")
                     continue
                 
-                idx = RichFormatter.ask_input("Enter phone number to edit (or 0 to cancel): ")
-                try:
-                    idx = int(idx)
-                    if idx == 0:
+                while True:
+                    idx = RichFormatter.ask_input("Enter phone number to edit (or 0 to cancel): ")
+                    try:
+                        idx = int(idx)
+                        if idx == 0:
+                            break
+                        if 1 <= idx <= len(record.phones):
+                            old_phone = record.phones[idx-1].value
+                            while True:
+                                new_phone = RichFormatter.ask_input(f"Enter new phone number to replace {old_phone}: ")
+                                if not new_phone:
+                                    RichFormatter.print_error("Phone number cannot be empty.")
+                                    continue
+                                try:
+                                    if record.edit_phone(old_phone, new_phone):
+                                        self.address_book.save()
+                                        RichFormatter.print_success(f"Phone number updated from {old_phone} to {new_phone}.")
+                                        break
+                                    else:
+                                        RichFormatter.print_error(f"Failed to update phone number.")
+                                        break
+                                except ValueError as e:
+                                    RichFormatter.print_error(f"Error: {e}")
+                                    continue
+                            break
+                        else:
+                            RichFormatter.print_error("Invalid phone number index.")
+                            break
+                    except ValueError:
+                        RichFormatter.print_error("Please enter a valid number.")
                         continue
-                    if 1 <= idx <= len(record.phones):
-                        old_phone = record.phones[idx-1].value
-                        new_phone = RichFormatter.ask_input(f"Enter new phone number to replace {old_phone}: ")
-                        if not new_phone:
-                            RichFormatter.print_error("Phone number cannot be empty.")
-                            continue
-                        
-                        try:
-                            if record.edit_phone(old_phone, new_phone):
-                                self.address_book.save()
-                                RichFormatter.print_success(f"Phone number updated from {old_phone} to {new_phone}.")
-                            else:
-                                RichFormatter.print_error(f"Failed to update phone number.")
-                        except ValueError as e:
-                            RichFormatter.print_error(f"Error: {e}")
-                    else:
-                        RichFormatter.print_error("Invalid phone number index.")
-                except ValueError:
-                    RichFormatter.print_error("Please enter a valid number.")
             
             elif choice == "3":
                 if not record.phones:
                     RichFormatter.print_warning("No phone numbers to remove.")
                     continue
                 
-                idx = RichFormatter.ask_input("Enter phone number to remove (or 0 to cancel): ")
-                try:
-                    idx = int(idx)
-                    if idx == 0:
-                        continue
-                    if 1 <= idx <= len(record.phones):
-                        phone = record.phones[idx-1].value
-                        if record.remove_phone(phone):
-                            self.address_book.save()
-                            RichFormatter.print_success(f"Phone number {phone} removed successfully.")
+                while True:
+                    idx = RichFormatter.ask_input("Enter phone number to remove (or 0 to cancel): ")
+                    try:
+                        idx = int(idx)
+                        if idx == 0:
+                            break
+                        if 1 <= idx <= len(record.phones):
+                            phone = record.phones[idx-1].value
+                            if record.remove_phone(phone):
+                                self.address_book.save()
+                                RichFormatter.print_success(f"Phone number {phone} removed successfully.")
+                                break
+                            else:
+                                RichFormatter.print_error(f"Failed to remove phone number {phone}.")
+                                break
                         else:
-                            RichFormatter.print_error(f"Failed to remove phone number {phone}.")
-                    else:
-                        RichFormatter.print_error("Invalid phone number index.")
-                except ValueError:
-                    RichFormatter.print_error("Please enter a valid number.")
+                            RichFormatter.print_error("Invalid phone number index.")
+                            break
+                    except ValueError:
+                        RichFormatter.print_error("Please enter a valid number.")
+                        continue
             
             elif choice == "4":
                 break
@@ -818,81 +836,112 @@ class Assistant:
     
     def _edit_email(self, record):
         """Helper method to edit contact email"""
-        if record.emails:
-            RichFormatter.print_info("Current emails:")
-            for i, email in enumerate(record.emails, 1):
-                RichFormatter.print_info(f"{i}. {email.value}")
+        while True:
+            if record.emails:
+                RichFormatter.print_info("Current emails:")
+                for i, email in enumerate(record.emails, 1):
+                    RichFormatter.print_info(f"{i}. {email.value}")
             
-            # Choose to edit or remove or add new
-            email_table = Table(title="Email Options", box=box.ROUNDED)
-            email_table.add_column("Option", style="cyan")
-            email_table.add_column("Description", style="white")
+            edit_table = Table(title="Email Options", box=box.ROUNDED)
+            edit_table.add_column("Option", style="cyan")
+            edit_table.add_column("Description", style="white")
             
-            email_table.add_row("1", "Edit an email")
-            email_table.add_row("2", "Remove an email")
-            email_table.add_row("3", "Add a new email")
+            edit_table.add_row("1", "Edit existing email")
+            edit_table.add_row("2", "Remove email")
+            edit_table.add_row("3", "Add new email")
+            edit_table.add_row("4", "Done")
             
-            RichFormatter.console.print(email_table)
+            RichFormatter.console.print(edit_table)
             
-            choice = RichFormatter.ask_input("Choose an option (1-3): ")
+            choice = RichFormatter.ask_input("Choose an option (1-4): ")
             
             if choice == "1":
-                idx = RichFormatter.ask_input("Enter email number to edit: ")
-                try:
-                    idx = int(idx)
-                    if 1 <= idx <= len(record.emails):
-                        old_email = record.emails[idx-1].value
-                        new_email = RichFormatter.ask_input(f"Enter new email to replace {old_email}: ")
-                        try:
-                            if record.edit_email(old_email, new_email):
-                                self.address_book.save()
-                                RichFormatter.print_success(f"Email updated from {old_email} to {new_email}.")
-                            else:
-                                RichFormatter.print_error("Failed to update email.")
-                        except ValueError as e:
-                            RichFormatter.print_error(f"Error: {e}")
-                    else:
-                        RichFormatter.print_error("Invalid email index.")
-                except ValueError:
-                    RichFormatter.print_error("Please enter a valid number.")
+                if not record.emails:
+                    RichFormatter.print_warning("No emails to edit.")
+                    continue
+                
+                while True:
+                    idx = RichFormatter.ask_input("Enter email number to edit: ")
+                    try:
+                        idx = int(idx)
+                        if 1 <= idx <= len(record.emails):
+                            old_email = record.emails[idx-1].value
+                            while True:
+                                new_email = RichFormatter.ask_input(f"Enter new email to replace {old_email}: ")
+                                try:
+                                    if record.edit_email(old_email, new_email):
+                                        self.address_book.save()
+                                        RichFormatter.print_success(f"Email updated from {old_email} to {new_email}.")
+                                        break
+                                    else:
+                                        RichFormatter.print_error("Failed to update email.")
+                                        break
+                                except ValueError as e:
+                                    RichFormatter.print_error(f"Error: {e}")
+                                    continue
+                            break
+                        else:
+                            RichFormatter.print_error("Invalid email index.")
+                            break
+                    except ValueError:
+                        RichFormatter.print_error("Please enter a valid number.")
+                        continue
             
             elif choice == "2":
-                idx = RichFormatter.ask_input("Enter email number to remove: ")
-                try:
-                    idx = int(idx)
-                    if 1 <= idx <= len(record.emails):
-                        email = record.emails[idx-1].value
-                        if record.remove_email(email):
-                            self.address_book.save()
-                            RichFormatter.print_success(f"Email {email} removed successfully.")
+                if not record.emails:
+                    RichFormatter.print_warning("No emails to remove.")
+                    continue
+                
+                while True:
+                    idx = RichFormatter.ask_input("Enter email number to remove: ")
+                    try:
+                        idx = int(idx)
+                        if 1 <= idx <= len(record.emails):
+                            email = record.emails[idx-1].value
+                            if record.remove_email(email):
+                                self.address_book.save()
+                                RichFormatter.print_success(f"Email {email} removed successfully.")
+                                break
+                            else:
+                                RichFormatter.print_error(f"Failed to remove email {email}.")
+                                break
                         else:
-                            RichFormatter.print_error(f"Failed to remove email {email}.")
-                    else:
-                        RichFormatter.print_error("Invalid email index.")
-                except ValueError:
-                    RichFormatter.print_error("Please enter a valid number.")
+                            RichFormatter.print_error("Invalid email index.")
+                            break
+                    except ValueError:
+                        RichFormatter.print_error("Please enter a valid number.")
+                        continue
             
             elif choice == "3":
-                email = RichFormatter.ask_input("Enter new email: ")
-                try:
-                    record.add_email(email)
-                    self.address_book.save()
-                    RichFormatter.print_success(f"Email {email} added successfully.")
-                except ValueError as e:
-                    RichFormatter.print_error(f"Error: {e}")
+                while True:
+                    email = RichFormatter.ask_input("Enter new email: ")
+                    try:
+                        record.add_email(email)
+                        self.address_book.save()
+                        RichFormatter.print_success(f"Email {email} added successfully.")
+                        break
+                    except ValueError as e:
+                        RichFormatter.print_error(f"Error: {e}")
+                        continue
+            
+            elif choice == "4":
+                break
             
             else:
                 RichFormatter.print_error("Invalid choice.")
         
         else:
             # No emails, just add a new one
-            email = RichFormatter.ask_input("No emails set. Enter email: ")
-            try:
-                record.add_email(email)
-                self.address_book.save()
-                RichFormatter.print_success(f"Email {email} added successfully.")
-            except ValueError as e:
-                RichFormatter.print_error(f"Error: {e}")
+            while True:
+                email = RichFormatter.ask_input("No emails set. Enter email: ")
+                try:
+                    record.add_email(email)
+                    self.address_book.save()
+                    RichFormatter.print_success(f"Email {email} added successfully.")
+                    break
+                except ValueError as e:
+                    RichFormatter.print_error(f"Error: {e}")
+                    continue
     
     def _edit_birthday(self, record):
         """Helper method to edit contact birthday"""
@@ -903,13 +952,16 @@ class Assistant:
             choice = RichFormatter.ask_input("Do you want to (1) edit or (2) remove the birthday? Enter choice (1/2): ")
             
             if choice == "1":
-                birthday = RichFormatter.ask_input("Enter new birthday (YYYY-MM-DD): ")
-                try:
-                    record.set_birthday(birthday)
-                    self.address_book.save()
-                    RichFormatter.print_success(f"Birthday updated to {birthday}.")
-                except ValueError as e:
-                    RichFormatter.print_error(f"Error: {e}")
+                while True:
+                    birthday = RichFormatter.ask_input("Enter new birthday (YYYY-MM-DD): ")
+                    try:
+                        record.set_birthday(birthday)
+                        self.address_book.save()
+                        RichFormatter.print_success(f"Birthday updated to {birthday}.")
+                        break
+                    except ValueError as e:
+                        RichFormatter.print_error(f"Error: {e}")
+                        continue
             
             elif choice == "2":
                 record.birthday = None
@@ -921,13 +973,16 @@ class Assistant:
         
         else:
             # No birthday set, just add a new one
-            birthday = RichFormatter.ask_input("No birthday set. Enter birthday (YYYY-MM-DD): ")
-            try:
-                record.set_birthday(birthday)
-                self.address_book.save()
-                RichFormatter.print_success(f"Birthday set to {birthday}.")
-            except ValueError as e:
-                RichFormatter.print_error(f"Error: {e}")
+            while True:
+                birthday = RichFormatter.ask_input("No birthday set. Enter birthday (YYYY-MM-DD): ")
+                try:
+                    record.set_birthday(birthday)
+                    self.address_book.save()
+                    RichFormatter.print_success(f"Birthday set to {birthday}.")
+                    break
+                except ValueError as e:
+                    RichFormatter.print_error(f"Error: {e}")
+                    continue
     
     def _edit_address(self, record):
         """Helper method to edit contact address"""
