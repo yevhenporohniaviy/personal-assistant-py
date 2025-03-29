@@ -1,6 +1,6 @@
 from src.address_book import AddressBook
 from src.note_book import NoteBook
-from src.record import Record, NoteRecord
+from src.record import ContactRecord, NoteRecord
 from src.utils.input_parser import InputParser
 from src.utils.localization import Localization
 from src.utils.rich_formatter import RichFormatter
@@ -18,8 +18,8 @@ class Assistant:
         # Define available commands
         self.commands = [
             "add contact", "show all", "search contacts", "edit contact", "delete contact", "birthdays",
-            "add note", "search notes", "edit note", "delete note", "add tag", "search by tag", "sort by tags",
-            "help", "exit", "quit", "q", "change language"
+            "add note", "show all notes", "search notes", "edit note", "delete note", "add tag", "search by tag", "sort by tags",
+            "help", "exit", "quit", "q", "change language", "джарвіс", "jarvis"
         ]
         
         # Initialize input parser
@@ -50,7 +50,10 @@ class Assistant:
         
         # Process the command
         if command in ["exit", "quit", "q"]:
-            RichFormatter.print_info(self.localization.get_text("goodbye"))
+            if RichFormatter.jarvis_mode:
+                RichFormatter.print_info("Initiating shutdown sequence. It's been a pleasure serving you, sir.")
+            else:
+                RichFormatter.print_info(self.localization.get_text("goodbye"))
             self.running = False
         elif command == "help":
             self.show_help()
@@ -70,6 +73,8 @@ class Assistant:
         # Note commands
         elif command == "add note":
             self.add_note()
+        elif command == "show all notes":
+            self.show_all_notes()
         elif command == "search notes":
             self.search_notes()
         elif command == "edit note":
@@ -84,6 +89,8 @@ class Assistant:
             self.sort_notes_by_tags()
         elif command == "change language":
             self.change_language()
+        elif command in ["джарвіс", "jarvis"]:
+            self.toggle_jarvis_mode()
         else:
             # Try to guess the command with improved algorithm
             guessed_commands = self.input_parser.guess_commands(user_input)
@@ -133,34 +140,80 @@ class Assistant:
                     RichFormatter.print_info(f"  {cmd}: {desc}")
                 return
         
+        # Determine styles based on Jarvis mode
+        jarvis_mode = RichFormatter.jarvis_mode
+        
+        # Set styles based on Jarvis mode
+        if jarvis_mode:
+            contact_title = "👤 Human Database Management [Protocol Alpha]"
+            note_title = "📝 Memory Storage System [Protocol Beta]"
+            other_title = "⚙️ System Controls [Protocol Omega]"
+            contact_box = box.HEAVY
+            note_box = box.HEAVY
+            other_box = box.HEAVY
+            contact_style = "red"
+            note_style = "red"
+            other_style = "red"
+            desc_style = "gold1"
+            border_style = "red"
+            title_style = "bold red on gold1"
+        else:
+            contact_title = "Contact Management"
+            note_title = "Note Management"
+            other_title = "Other Commands"
+            contact_box = box.ROUNDED
+            note_box = box.ROUNDED
+            other_box = box.ROUNDED
+            contact_style = "cyan"
+            note_style = "magenta"
+            other_style = "green"
+            desc_style = "white"
+            border_style = ""
+            title_style = ""
+        
         # Create tables for each command category
-        contact_table = Table(title="Contact Management", box=box.ROUNDED, expand=False)
-        contact_table.add_column("Command", style="cyan")
-        contact_table.add_column("Description", style="white")
+        contact_table = Table(title=contact_title, box=contact_box, expand=False, 
+                            border_style=border_style, title_style=title_style)
+        contact_table.add_column("Command", style=contact_style)
+        contact_table.add_column("Description", style=desc_style)
         
         for cmd in ["add contact", "show all", "search contacts", "edit contact", "delete contact", "birthdays"]:
-            desc_key = f"desc_{cmd.replace(' ', '_')}"
             display_cmd = self.localization.get_text(cmd)
+            # Use Jarvis-style descriptions if in Jarvis mode
+            if jarvis_mode:
+                desc_key = f"jarvis_desc_{cmd.replace(' ', '_')}"
+            else:
+                desc_key = f"desc_{cmd.replace(' ', '_')}"
             display_desc = self.localization.get_text(desc_key)
             contact_table.add_row(display_cmd, display_desc)
         
-        note_table = Table(title="Note Management", box=box.ROUNDED, expand=False)
-        note_table.add_column("Command", style="magenta")
-        note_table.add_column("Description", style="white")
+        note_table = Table(title=note_title, box=note_box, expand=False, 
+                          border_style=border_style, title_style=title_style)
+        note_table.add_column("Command", style=note_style)
+        note_table.add_column("Description", style=desc_style)
         
-        for cmd in ["add note", "search notes", "edit note", "delete note", "add tag", "search by tag", "sort by tags"]:
-            desc_key = f"desc_{cmd.replace(' ', '_')}"
+        for cmd in ["add note", "show all notes", "search notes", "edit note", "delete note", "add tag", "search by tag", "sort by tags"]:
             display_cmd = self.localization.get_text(cmd)
+            # Use Jarvis-style descriptions if in Jarvis mode
+            if jarvis_mode:
+                desc_key = f"jarvis_desc_{cmd.replace(' ', '_')}"
+            else:
+                desc_key = f"desc_{cmd.replace(' ', '_')}"
             display_desc = self.localization.get_text(desc_key)
             note_table.add_row(display_cmd, display_desc)
         
-        other_table = Table(title="Other Commands", box=box.ROUNDED, expand=False)
-        other_table.add_column("Command", style="green")
-        other_table.add_column("Description", style="white")
+        other_table = Table(title=other_title, box=other_box, expand=False, 
+                          border_style=border_style, title_style=title_style)
+        other_table.add_column("Command", style=other_style)
+        other_table.add_column("Description", style=desc_style)
         
-        for cmd in ["help", "exit", "change language"]:
-            desc_key = f"desc_{cmd.replace(' ', '_')}"
+        for cmd in ["help", "exit", "change language", "jarvis"]:
             display_cmd = self.localization.get_text(cmd)
+            # Use Jarvis-style descriptions if in Jarvis mode
+            if jarvis_mode:
+                desc_key = f"jarvis_desc_{cmd.replace(' ', '_')}"
+            else:
+                desc_key = f"desc_{cmd.replace(' ', '_')}"
             display_desc = self.localization.get_text(desc_key)
             other_table.add_row(display_cmd, display_desc)
         
@@ -184,7 +237,7 @@ class Assistant:
                 return
             
             # Create a new contact record
-            record = Record(name)
+            record = ContactRecord(name)
             
             # Add phone numbers
             while True:
@@ -211,7 +264,7 @@ class Assistant:
             birthday = RichFormatter.ask_input("Enter birthday (YYYY-MM-DD, leave empty to skip): ")
             if birthday:
                 try:
-                    record.add_birthday(birthday)
+                    record.set_birthday(birthday)
                 except ValueError as e:
                     RichFormatter.print_error(f"Error: {e}")
             
@@ -222,7 +275,12 @@ class Assistant:
             
             # Add to address book
             self.address_book.add_record(record)
-            RichFormatter.print_success(f"Contact '{name}' added successfully!")
+            
+            if RichFormatter.jarvis_mode:
+                RichFormatter.print_success(f"Human record for '{name}' successfully created and stored in database.")
+            else:
+                RichFormatter.print_success(f"Contact '{name}' added successfully!")
+            
             RichFormatter.display_contact(record)
             
         except Exception as e:
@@ -246,10 +304,16 @@ class Assistant:
         
         results = self.address_book.search(query)
         if not results:
-            RichFormatter.print_warning(f"No contacts found for query '{query}'.")
+            if RichFormatter.jarvis_mode:
+                RichFormatter.print_warning(f"Scan complete. No human records found matching query '{query}'.")
+            else:
+                RichFormatter.print_warning(f"No contacts found for query '{query}'.")
             return
         
-        RichFormatter.print_success(f"Found {len(results)} contacts:")
+        if RichFormatter.jarvis_mode:
+            RichFormatter.print_success(f"Human record scan complete. Located {len(results)} matching entries:")
+        else:
+            RichFormatter.print_success(f"Found {len(results)} contacts:")
         RichFormatter.display_contacts_table(results)
     
     def edit_contact(self):
@@ -371,36 +435,58 @@ class Assistant:
     def add_note(self):
         """Add a new note"""
         try:
-            title = RichFormatter.ask_input("Enter note title: ")
-            if not title:
+            name = RichFormatter.ask_input("Enter note title: ")
+            if not name:
                 RichFormatter.print_error("Title cannot be empty.")
                 return
             
-            # Check if note already exists
-            if self.note_book.find(title):
-                RichFormatter.print_error(f"Note '{title}' already exists.")
-                return
-            
-            # Get note content
             content = RichFormatter.ask_input("Enter note content: ")
             
             # Create a new note record
-            note = NoteRecord(title, content)
+            record = NoteRecord(name, content)
             
             # Add tags
-            if RichFormatter.ask_confirm("Do you want to add tags to this note?", False):
-                self._edit_note_tags(note)
+            while True:
+                add_tag = RichFormatter.ask_confirm("Add a tag to this note?", False)
+                if not add_tag:
+                    break
+                
+                tag = RichFormatter.ask_input("Enter tag: ")
+                if tag:
+                    try:
+                        record.add_tag(tag)
+                    except ValueError as e:
+                        RichFormatter.print_error(f"Error: {e}")
             
             # Add to note book
-            self.note_book.add_record(note)
-            RichFormatter.print_success(f"Note '{title}' added successfully!")
-            RichFormatter.display_note(note)
+            self.note_book.add_record(record)
+            
+            if RichFormatter.jarvis_mode:
+                RichFormatter.print_success(f"Memory file '{name}' successfully created and stored.")
+            else:
+                RichFormatter.print_success(f"Note '{name}' added successfully!")
+                
+            RichFormatter.display_note(record)
             
         except Exception as e:
             RichFormatter.print_error(f"Error adding note: {e}")
     
+    def show_all_notes(self):
+        """Show all notes"""
+        if not self.note_book.data:
+            RichFormatter.print_warning("Note book is empty.")
+            return
+        
+        # Use rich formatter to display notes
+        if RichFormatter.jarvis_mode:
+            RichFormatter.print_success("Displaying all available memory files in database:")
+        else:
+            RichFormatter.print_success("Displaying all notes:")
+            
+        RichFormatter.display_notes_table(self.note_book.data.values())
+    
     def search_notes(self):
-        """Search notes by content"""
+        """Search notes"""
         query = RichFormatter.ask_input("Enter search query: ")
         if not query:
             RichFormatter.print_error("Search query cannot be empty.")
@@ -408,10 +494,16 @@ class Assistant:
         
         results = self.note_book.search(query)
         if not results:
-            RichFormatter.print_warning(f"No notes found for query '{query}'.")
+            if RichFormatter.jarvis_mode:
+                RichFormatter.print_warning(f"Memory scan complete. No data found matching query '{query}'.")
+            else:
+                RichFormatter.print_warning(f"No notes found for query '{query}'.")
             return
         
-        RichFormatter.print_success(f"Found {len(results)} notes:")
+        if RichFormatter.jarvis_mode:
+            RichFormatter.print_success(f"Memory scan complete. Retrieved {len(results)} matching records:")
+        else:
+            RichFormatter.print_success(f"Found {len(results)} notes:")
         RichFormatter.display_notes_table(results)
     
     def edit_note(self):
@@ -894,3 +986,17 @@ class Assistant:
                 RichFormatter.print_error("Invalid choice.")
         except ValueError:
             RichFormatter.print_error("Please enter a valid number.")
+
+    def toggle_jarvis_mode(self):
+        """Toggle Jarvis mode on/off"""
+        is_enabled = RichFormatter.toggle_jarvis_mode()
+        
+        # Show welcome message if enabled
+        if is_enabled:
+            RichFormatter.print_jarvis_welcome()
+            RichFormatter.print_success(self.localization.get_text("jarvis_enabled"))
+        else:
+            RichFormatter.print_success(self.localization.get_text("jarvis_disabled"))
+            
+        # Show available commands after toggling Jarvis mode
+        self.show_help()

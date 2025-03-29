@@ -1,7 +1,7 @@
 from collections import UserDict
 from src.record import NoteRecord
 from src.utils.storage import Storage
-from src.utils.color_formatter import ColorFormatter
+from io import StringIO
 
 class NoteBook(UserDict):
     """Class for storing and managing notes"""
@@ -12,6 +12,30 @@ class NoteBook(UserDict):
         data = self.storage.load()
         if data:
             self.data = data
+            # Migrate old records if needed
+            self._migrate_records()
+    
+    def _migrate_records(self):
+        """Migrate old Record objects to NoteRecord"""
+        migrated = False
+        for name, record in list(self.data.items()):
+            # Check if record is not a NoteRecord
+            if not hasattr(record, 'content') or not hasattr(record, 'tags'):
+                # Create a new NoteRecord with default content
+                new_record = NoteRecord(record.name.value, getattr(record, 'content', ""))
+                # Copy any available attributes
+                if hasattr(record, 'created_at'):
+                    new_record.created_at = record.created_at
+                if hasattr(record, 'updated_at'):
+                    new_record.updated_at = record.updated_at
+                
+                # Replace old record with new one
+                self.data[name] = new_record
+                migrated = True
+        
+        # Save changes if any records were migrated
+        if migrated:
+            self.save()
     
     def add_record(self, record):
         """Add a new note record to the note book"""
@@ -96,12 +120,15 @@ class NoteBook(UserDict):
         return self.storage.save(self.data)
     
     def __str__(self):
+        """String representation of the note book"""
+        output = StringIO()
+        
         if not self.data:
-            return ColorFormatter.warning("Note book is empty")
+            return "Note book is empty"
         
-        result = [ColorFormatter.bold("Note Book:")]
+        output.write("Note Book:\n")
         for record in self.data.values():
-            result.append(str(record))
-            result.append(ColorFormatter.info("-" * 30))
+            output.write(f"{record}\n")
+            output.write("-" * 30 + "\n")
         
-        return "\n".join(result)
+        return output.getvalue().strip()
