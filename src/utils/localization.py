@@ -48,6 +48,9 @@ class Localization:
                 "help": "help",
                 "exit": "exit",
                 "change language": "change language",
+                "show all": "show all",
+                "jarvis": "jarvis",
+                "show all notes": "show all notes",
                 
                 # Command descriptions
                 "desc_add_contact": "Add a new contact",
@@ -65,6 +68,29 @@ class Localization:
                 "desc_help": "Show available commands",
                 "desc_exit": "Exit the program",
                 "desc_change_language": "Change interface language",
+                "desc_show_all": "Show all contacts",
+                "desc_jarvis": "Toggle J.A.R.V.I.S. mode (Iron Man style assistant)",
+                "desc_show_all_notes": "Show all notes",
+                
+                # Ironman style command descriptions (for Jarvis mode)
+                "jarvis_desc_add_contact": "Create a new human entry in my database. Because you need more friends.",
+                "jarvis_desc_search_contacts": "Initiate reconnaissance protocol for contacting humans.",
+                "jarvis_desc_edit_contact": "Modify human data. People change, my records don't lie.",
+                "jarvis_desc_delete_contact": "Erase human from my memory banks. No hard feelings.",
+                "jarvis_desc_birthdays": "Calculate upcoming human aging milestones. Cake required.",
+                "jarvis_desc_add_note": "Store new data in my neural network. My memory is impeccable.",
+                "jarvis_desc_search_notes": "Scan my memory banks for previously stored information.",
+                "jarvis_desc_edit_note": "Update existing memory files. Even I make mistakes... theoretically.",
+                "jarvis_desc_delete_note": "Permanently erase data from my system. No backups, sir.",
+                "jarvis_desc_add_tag": "Attach metadata label for enhanced categorization protocols.",
+                "jarvis_desc_search_by_tag": "Initiate pattern-matching protocol using metadata tags.",
+                "jarvis_desc_sort_by_tags": "Reorganize memory files by metadata classification.",
+                "jarvis_desc_help": "Display available operational commands. I'm here to assist you, sir.",
+                "jarvis_desc_exit": "Terminate current session. I'll miss you, sir.",
+                "jarvis_desc_change_language": "Reconfigure linguistic parameters. I'm fluent in over 6 million forms of communication.",
+                "jarvis_desc_show_all": "Display all registered humans in database. Your social network is... modest.",
+                "jarvis_desc_jarvis": "Disable J.A.R.V.I.S. mode. But sir, I was just warming up!",
+                "jarvis_desc_show_all_notes": "Display all memory files stored in database. My memory archives are vast.",
                 
                 # UI strings
                 "welcome": "Welcome to Personal Assistant!",
@@ -114,7 +140,11 @@ class Localization:
                 "tag_added": "Tag added successfully.",
                 "no_notes_found": "No notes found.",
                 "notes_by_tag": "Notes by tag:",
-                "no_tags": "Notes without tags:"
+                "no_tags": "Notes without tags:",
+                
+                # Jarvis related strings
+                "jarvis_enabled": "J.A.R.V.I.S. mode enabled. At your service, sir.",
+                "jarvis_disabled": "J.A.R.V.I.S. mode disabled. Returning to normal mode."
             },
             "uk": {
                 # Command names
@@ -133,6 +163,70 @@ class Localization:
                 "help": "допомога",
                 "exit": "вихід",
                 "change language": "змінити мову",
+                "show all": "показати все",
+                "jarvis": "джарвіс",
+                "show all notes": "показати всі нотатки",
+                
+                # Command descriptions
+                "desc_add_contact": "Додати новий контакт",
+                "desc_search_contacts": "Пошук контактів",
+                "desc_edit_contact": "Редагувати контакт",
+                "desc_delete_contact": "Видалити контакт",
+                "desc_birthdays": "Показати найближчі дні народження",
+                "desc_add_note": "Додати нову нотатку",
+                "desc_search_notes": "Пошук нотаток",
+                "desc_edit_note": "Редагувати нотатку",
+                "desc_delete_note": "Видалити нотатку",
+                "desc_add_tag": "Додати тег до нотатки",
+                "desc_search_by_tag": "Пошук нотаток за тегом",
+                "desc_sort_by_tags": "Сортувати нотатки за тегами",
+                "desc_help": "Показати доступні команди",
+                "desc_exit": "Вийти з програми",
+                "desc_change_language": "Змінити мову інтерфейсу",
+                "desc_show_all": "Показати всі контакти",
+                "desc_jarvis": "Увімкнути режим Д.Ж.А.Р.В.І.С. (асистент у стилі Залізної людини)",
+                "desc_show_all_notes": "Показати всі нотатки",
+                
+                # Ironman style command descriptions (for Jarvis mode in Ukrainian)
+                "jarvis_desc_add_contact": "Створити новий запис людини в моїй базі даних. Бо вам потрібно більше друзів.",
+                "jarvis_desc_search_contacts": "Ініціювати протокол розвідки для контакту з людьми.",
+                "jarvis_desc_edit_contact": "Модифікувати дані про людину. Люди змінюються, мої записи не брешуть.",
+                "jarvis_desc_delete_contact": "Стерти людину з моїх банків пам'яті. Без образ.",
+                "jarvis_desc_birthdays": "Розрахувати майбутні віхи старіння людей. Торт обов'язковий.",
+                "jarvis_desc_add_note": "Зберегти нові дані в моїй нейронній мережі. Моя пам'ять бездоганна.",
+                "jarvis_desc_search_notes": "Сканувати мої банки пам'яті на наявність раніше збереженої інформації.",
+                "jarvis_desc_edit_note": "Оновити існуючі файли пам'яті. Навіть я помиляюсь... теоретично.",
+                "jarvis_desc_delete_note": "Назавжди стерти дані з моєї системи. Без резервних копій, сер.",
+                "jarvis_desc_add_tag": "Прикріпити метадані для покращеного протоколу категоризації.",
+                "jarvis_desc_search_by_tag": "Ініціювати протокол пошуку за допомогою метаданих.",
+                "jarvis_desc_sort_by_tags": "Реорганізувати файли пам'яті за класифікацією метаданих.",
+                "jarvis_desc_help": "Відобразити доступні операційні команди. Я тут, щоб допомогти вам, сер.",
+                "jarvis_desc_exit": "Завершити поточний сеанс. Я сумуватиму за вами, сер.",
+                "jarvis_desc_change_language": "Реконфігурувати лінгвістичні параметри. Я вільно володію більш ніж 6 мільйонами форм комунікації.",
+                "jarvis_desc_show_all": "Відобразити всіх зареєстрованих людей в базі даних. Ваша соціальна мережа... скромна.",
+                "jarvis_desc_jarvis": "Вимкнути режим Д.Ж.А.Р.В.І.С. Але сер, я тільки розігрівався!",
+                "jarvis_desc_show_all_notes": "Відобразити всі файли пам'яті, що зберігаються в базі даних. Мої архіви пам'яті неосяжні.",
+                
+                # UI strings
+                "welcome": "Ласкаво просимо до Персонального Помічника!",
+                "enter_command": "Введіть команду: ",
+                "exiting": "Виходимо...",
+                "error": "Помилка: {}",
+                "command_not_recognized": "Команда не розпізнана. Введіть 'допомога' для перегляду доступних команд.",
+                "command_not_implemented": "Команда ще не реалізована.",
+                "available_commands": "Доступні команди:",
+                "did_you_mean": "Можливо, ви мали на увазі '{}'? (т/н): ",
+                "goodbye": "До побачення! Гарного дня!",
+                "language_changed": "Мову змінено на українську.",
+                "select_language": "Виберіть мову:\n1. English\n2. Українська\nВведіть номер: ",
+                "multiple_suggestions": "Можливо, ви мали на увазі одну з цих команд?",
+                "select_suggestion": "Введіть номер (або натисніть Enter для пропуску): ",
+                "search_results": "Результати пошуку:",
+                "no_results": "Результатів не знайдено.",
+                "search_query": "Введіть пошуковий запит: ",
+                "search_criteria": "Пошук за:\n1. Ім'я\n2. Телефон\n3. Email\n4. Адреса\nВведіть номер: ",
+                "tag_search_criteria": "Пошук за:\n1. Назва тегу\n2. Вміст нотатки\nВведіть номер: ",
+                "sort_criteria": "Сортувати за:\n1. Ім'я\n2. Дата\n3. Теги\nВведіть номер: ",
                 
                 # Contact management messages
                 "contact_added": "Контакт успішно додано.",
@@ -163,50 +257,9 @@ class Localization:
                 "notes_by_tag": "Нотатки за тегом:",
                 "no_tags": "Нотатки без тегів:",
                 
-                # Command descriptions
-                "desc_add_contact": "Додати новий контакт",
-                "desc_search_contacts": "Пошук контактів",
-                "desc_edit_contact": "Редагувати контакт",
-                "desc_delete_contact": "Видалити контакт",
-                "desc_birthdays": "Показати найближчі дні народження",
-                "desc_add_note": "Додати нову нотатку",
-                "desc_search_notes": "Пошук нотаток",
-                "desc_edit_note": "Редагувати нотатку",
-                "desc_delete_note": "Видалити нотатку",
-                "desc_add_tag": "Додати тег до нотатки",
-                "desc_search_by_tag": "Пошук нотаток за тегом",
-                "desc_sort_by_tags": "Сортувати нотатки за тегами",
-                "desc_help": "Показати доступні команди",
-                "desc_exit": "Вийти з програми",
-                "desc_change_language": "Змінити мову інтерфейсу",
-
-                
-                # UI strings
-                "welcome": "Ласкаво просимо до Персонального Помічника!",
-                "enter_command": "Введіть команду: ",
-                "exiting": "Виходимо...",
-                "error": "Помилка: {}",
-                "command_not_recognized": "Команда не розпізнана. Введіть 'допомога' для перегляду доступних команд.",
-                "command_not_implemented": "Команда ще не реалізована.",
-                "available_commands": "Доступні команди:",
-                "did_you_mean": "Можливо, ви мали на увазі '{}'? (т/н): ",
-                "goodbye": "До побачення! Гарного дня!",
-                "language_changed": "Мову змінено на українську.",
-                "select_language": "Виберіть мову:\n1. English\n2. Українська\nВведіть номер: ",
-                "multiple_suggestions": "Можливо, ви мали на увазі одну з цих команд?",
-                "select_suggestion": "Введіть номер (або натисніть Enter для пропуску): ",
-                "search_results": "Результати пошуку:",
-                "no_results": "Результатів не знайдено.",
-                "search_query": "Введіть пошуковий запит: ",
-                "search_criteria": "Пошук за:\n1. Ім'я\n2. Телефон\n3. Email\n4. Адреса\nВведіть номер: ",
-                "tag_search_criteria": "Пошук за:\n1. Назва тегу\n2. Вміст нотатки\nВведіть номер: ",
-                "sort_criteria": "Сортувати за:\n1. Ім'я\n2. Дата\n3. Теги\nВведіть номер: ",
-                "search_criteria": "Пошук за:\n1. Ім'я\n2. Телефон\n3. Email\n4. Адреса\nВведіть номер: ",
-                "tag_search_criteria": "Пошук за:\n1. Назва тегу\n2. Вміст нотатки\nВведіть номер: ",
-                "sort_criteria": "Сортувати за:\n1. Ім'я\n2. Дата\n3. Теги\nВведіть номер: ",
-                "search_criteria": "Шукати за:\n1. Ім'ям\n2. Телефоном\n3. Email\n4. Адресою\nВведіть номер: ",
-                "tag_search_criteria": "Шукати за:\n1. Назвою тегу\n2. Вмістом нотатки\nВведіть номер: ",
-                "sort_criteria": "Сортувати за:\n1. Ім'ям\n2. Датою\n3. Тегами\nВведіть номер: "
+                # Jarvis related strings
+                "jarvis_enabled": "Режим Д.Ж.А.Р.В.І.С. увімкнено. До ваших послуг, сер.",
+                "jarvis_disabled": "Режим Д.Ж.А.Р.В.І.С. вимкнено. Повернення до звичайного режиму."
             }
         }
     
@@ -248,6 +301,23 @@ class Localization:
                 # Return the same key from the English translations
                 return key
         return translated_command
+    
+    def get_available_languages(self):
+        """
+        Return dictionary of available languages
+        """
+        return self.languages
+    
+    def set_language(self, language_code):
+        """
+        Set language directly by language code
+        """
+        if language_code in self.languages:
+            self.current_language = language_code
+            # Save language preference
+            self.storage.save(self.current_language)
+            return True
+        return False
     
     def change_language(self):
         """

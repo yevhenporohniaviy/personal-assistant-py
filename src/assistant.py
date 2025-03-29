@@ -1,8 +1,11 @@
 from src.address_book import AddressBook
 from src.note_book import NoteBook
-from src.record import Record, NoteRecord
+from src.record import ContactRecord, NoteRecord
 from src.utils.input_parser import InputParser
 from src.utils.localization import Localization
+from src.utils.rich_formatter import RichFormatter
+from rich import box
+from rich.table import Table
 
 class Assistant:
     """Main assistant class that handles user interaction"""
@@ -15,8 +18,8 @@ class Assistant:
         # Define available commands
         self.commands = [
             "add contact", "show all", "search contacts", "edit contact", "delete contact", "birthdays",
-            "add note", "search notes", "edit note", "delete note", "add tag", "search by tag", "sort by tags",
-            "help", "exit", "quit", "q", "change language"
+            "add note", "show all notes", "search notes", "edit note", "delete note", "add tag", "search by tag", "sort by tags",
+            "help", "exit", "quit", "q", "change language", "джарвіс", "jarvis"
         ]
         
         # Initialize input parser
@@ -25,18 +28,20 @@ class Assistant:
     def run(self):
         """Run the main loop of the assistant"""
         self.running = True
-        print(self.localization.get_text("welcome"))
+        
+        # Welcome message with Rich formatting
+        RichFormatter.print_header(self.localization.get_text("welcome"))
         self.show_help()
         
         while self.running:
             try:
-                user_input = input(self.localization.get_text("enter_command")).strip()
-                self.process_command(user_input)
+                user_input = RichFormatter.ask_input(f"\n{self.localization.get_text('enter_command')}")
+                self.process_command(user_input.strip())
             except KeyboardInterrupt:
-                print("\nGoodbye!")
+                RichFormatter.print_warning("\nGoodbye!")
                 self.running = False
             except Exception as e:
-                print(self.localization.get_text("error").format(str(e)))
+                RichFormatter.print_error(self.localization.get_text("error").format(str(e)))
     
     def process_command(self, user_input):
         """Process user command with intelligent parsing"""
@@ -45,7 +50,10 @@ class Assistant:
         
         # Process the command
         if command in ["exit", "quit", "q"]:
-            print(self.localization.get_text("goodbye"))
+            if RichFormatter.jarvis_mode:
+                RichFormatter.print_info("Initiating shutdown sequence. It's been a pleasure serving you, sir.")
+            else:
+                RichFormatter.print_info(self.localization.get_text("goodbye"))
             self.running = False
         elif command == "help":
             self.show_help()
@@ -65,6 +73,8 @@ class Assistant:
         # Note commands
         elif command == "add note":
             self.add_note()
+        elif command == "show all notes":
+            self.show_all_notes()
         elif command == "search notes":
             self.search_notes()
         elif command == "edit note":
@@ -79,6 +89,8 @@ class Assistant:
             self.sort_notes_by_tags()
         elif command == "change language":
             self.change_language()
+        elif command in ["джарвіс", "jarvis"]:
+            self.toggle_jarvis_mode()
         else:
             # Try to guess the command with improved algorithm
             guessed_commands = self.input_parser.guess_commands(user_input)
@@ -89,18 +101,18 @@ class Assistant:
                     guessed_command = guessed_commands[0]
                     display_command = self.localization.get_text(guessed_command)
                     confirm_msg = self.localization.get_text("did_you_mean").format(display_command)
-                    confirm = input(confirm_msg).strip().lower()
-                    if confirm == 'y' or confirm == 'т': # 'т' is 'y' in Ukrainian
+                    confirm = RichFormatter.ask_confirm(confirm_msg, False)
+                    if confirm:
                         self.process_command(guessed_command)
                         return
                 else:
                     # Multiple suggestions
-                    print(self.localization.get_text("multiple_suggestions"))
+                    RichFormatter.print_warning(self.localization.get_text("multiple_suggestions"))
                     for i, cmd in enumerate(guessed_commands, 1):
                         display_command = self.localization.get_text(cmd)
-                        print(f"{i}. {display_command}")
+                        RichFormatter.print_info(f"{i}. {display_command}")
                     
-                    choice = input(self.localization.get_text("select_suggestion")).strip()
+                    choice = RichFormatter.ask_input(self.localization.get_text("select_suggestion"))
                     try:
                         idx = int(choice) - 1
                         if 0 <= idx < len(guessed_commands):
@@ -110,12 +122,12 @@ class Assistant:
                         pass
             
             # Show context-sensitive help
-            print(self.localization.get_text("command_not_recognized"))
+            RichFormatter.print_error(self.localization.get_text("command_not_recognized"))
             self.show_help(user_input)
     
     def show_help(self, context=None):
         """Show available commands with context-aware help"""
-        print(f"\n{self.localization.get_text('available_commands')}")
+        RichFormatter.print_header(self.localization.get_text('available_commands'))
         
         # Get commands and descriptions in current language
         commands = self.localization.get_command_dict()
@@ -125,470 +137,866 @@ class Assistant:
             relevant_commands = [cmd for cmd in commands.items() if context.lower() in cmd[0].lower()]
             if relevant_commands:
                 for cmd, desc in relevant_commands:
-                    print(f"  {cmd}: {desc}")
+                    RichFormatter.print_info(f"  {cmd}: {desc}")
                 return
         
-        # Show full help organized by category
-        print("  Contact Management:")
+        # Determine styles based on Jarvis mode
+        jarvis_mode = RichFormatter.jarvis_mode
+        
+        # Set styles based on Jarvis mode
+        if jarvis_mode:
+            contact_title = "👤 Human Database Management [Protocol Alpha]"
+            note_title = "📝 Memory Storage System [Protocol Beta]"
+            other_title = "⚙️ System Controls [Protocol Omega]"
+            contact_box = box.HEAVY
+            note_box = box.HEAVY
+            other_box = box.HEAVY
+            contact_style = "red"
+            note_style = "red"
+            other_style = "red"
+            desc_style = "gold1"
+            border_style = "red"
+            title_style = "bold red on gold1"
+        else:
+            contact_title = "Contact Management"
+            note_title = "Note Management"
+            other_title = "Other Commands"
+            contact_box = box.ROUNDED
+            note_box = box.ROUNDED
+            other_box = box.ROUNDED
+            contact_style = "cyan"
+            note_style = "magenta"
+            other_style = "green"
+            desc_style = "white"
+            border_style = ""
+            title_style = ""
+        
+        # Create tables for each command category
+        contact_table = Table(title=contact_title, box=contact_box, expand=False, 
+                            border_style=border_style, title_style=title_style)
+        contact_table.add_column("Command", style=contact_style)
+        contact_table.add_column("Description", style=desc_style)
+        
         for cmd in ["add contact", "show all", "search contacts", "edit contact", "delete contact", "birthdays"]:
-            desc_key = f"desc_{cmd.replace(' ', '_')}"
             display_cmd = self.localization.get_text(cmd)
+            # Use Jarvis-style descriptions if in Jarvis mode
+            if jarvis_mode:
+                desc_key = f"jarvis_desc_{cmd.replace(' ', '_')}"
+            else:
+                desc_key = f"desc_{cmd.replace(' ', '_')}"
             display_desc = self.localization.get_text(desc_key)
-            print(f"  {display_cmd} - {display_desc}")
+            contact_table.add_row(display_cmd, display_desc)
         
-        print("\n  Note Management:")
-        for cmd in ["add note", "search notes", "edit note", "delete note", "add tag", "search by tag", "sort by tags"]:
-            desc_key = f"desc_{cmd.replace(' ', '_')}"
-            display_cmd = self.localization.get_text(cmd)
-            display_desc = self.localization.get_text(desc_key)
-            print(f"  {display_cmd} - {display_desc}")
+        note_table = Table(title=note_title, box=note_box, expand=False, 
+                          border_style=border_style, title_style=title_style)
+        note_table.add_column("Command", style=note_style)
+        note_table.add_column("Description", style=desc_style)
         
-        print("\n  Other Commands:")
-        for cmd in ["help", "exit", "change language"]:
-            desc_key = f"desc_{cmd.replace(' ', '_')}"
+        for cmd in ["add note", "show all notes", "search notes", "edit note", "delete note", "add tag", "search by tag", "sort by tags"]:
             display_cmd = self.localization.get_text(cmd)
+            # Use Jarvis-style descriptions if in Jarvis mode
+            if jarvis_mode:
+                desc_key = f"jarvis_desc_{cmd.replace(' ', '_')}"
+            else:
+                desc_key = f"desc_{cmd.replace(' ', '_')}"
             display_desc = self.localization.get_text(desc_key)
-            print(f"  {display_cmd} - {display_desc}")
-        print()
+            note_table.add_row(display_cmd, display_desc)
+        
+        other_table = Table(title=other_title, box=other_box, expand=False, 
+                          border_style=border_style, title_style=title_style)
+        other_table.add_column("Command", style=other_style)
+        other_table.add_column("Description", style=desc_style)
+        
+        for cmd in ["help", "exit", "change language", "jarvis"]:
+            display_cmd = self.localization.get_text(cmd)
+            # Use Jarvis-style descriptions if in Jarvis mode
+            if jarvis_mode:
+                desc_key = f"jarvis_desc_{cmd.replace(' ', '_')}"
+            else:
+                desc_key = f"desc_{cmd.replace(' ', '_')}"
+            display_desc = self.localization.get_text(desc_key)
+            other_table.add_row(display_cmd, display_desc)
+        
+        # Print the tables
+        RichFormatter.console.print(contact_table)
+        RichFormatter.console.print(note_table)
+        RichFormatter.console.print(other_table)
     
     # Contact management methods
     def add_contact(self):
         """Add a new contact"""
         try:
-            name = input("Enter name: ").strip()
+            name = RichFormatter.ask_input("Enter name: ")
             if not name:
-                print("Name cannot be empty.")
+                RichFormatter.print_error("Name cannot be empty.")
                 return
             
             # Check if contact already exists
             if self.address_book.find(name):
-                print(f"Contact '{name}' already exists.")
+                RichFormatter.print_error(f"Contact '{name}' already exists.")
                 return
             
             # Create a new contact record
-            record = Record(name)
+            record = ContactRecord(name)
             
             # Add phone numbers
             while True:
-                phone = input("Enter phone number (leave empty to skip): ").strip()
+                phone = RichFormatter.ask_input("Enter phone number (leave empty to skip): ")
                 if not phone:
                     break
                 try:
                     record.add_phone(phone)
-                    add_another = input("Add another phone? (y/n): ").strip().lower()
-                    if add_another != 'y':
+                    add_another = RichFormatter.ask_confirm("Add another phone?", False)
+                    if not add_another:
                         break
                 except ValueError as e:
-                    print(f"Error: {e}")
+                    RichFormatter.print_error(f"Error: {e}")
             
             # Add email
-            email = input("Enter email (leave empty to skip): ").strip()
+            email = RichFormatter.ask_input("Enter email (leave empty to skip): ")
             if email:
                 try:
                     record.add_email(email)
                 except ValueError as e:
-                    print(f"Error: {e}")
+                    RichFormatter.print_error(f"Error: {e}")
             
             # Add birthday
-            birthday = input("Enter birthday (YYYY-MM-DD, leave empty to skip): ").strip()
+            birthday = RichFormatter.ask_input("Enter birthday (YYYY-MM-DD, leave empty to skip): ")
             if birthday:
                 try:
-                    record.add_birthday(birthday)
+                    record.set_birthday(birthday)
                 except ValueError as e:
-                    print(f"Error: {e}")
+                    RichFormatter.print_error(f"Error: {e}")
             
             # Add address
-            address = input("Enter address (leave empty to skip): ").strip()
+            address = RichFormatter.ask_input("Enter address (leave empty to skip): ")
             if address:
-                record.add_address(address)
+                record.set_address(address)
             
-            # Add the record to the address book
+            # Add to address book
             self.address_book.add_record(record)
-            print(f"Contact '{name}' added successfully.")
             
-        except ValueError as e:
-            print(f"Error: {e}")
+            if RichFormatter.jarvis_mode:
+                RichFormatter.print_success(f"Human record for '{name}' successfully created and stored in database.")
+            else:
+                RichFormatter.print_success(f"Contact '{name}' added successfully!")
+            
+            RichFormatter.display_contact(record)
+            
+        except Exception as e:
+            RichFormatter.print_error(f"Error adding contact: {e}")
     
     def show_all_contacts(self):
         """Show all contacts"""
         if not self.address_book.data:
-            print("No contacts found.")
+            RichFormatter.print_warning("Address book is empty.")
             return
         
-        print("\nAll contacts:")
-        for record in self.address_book.data.values():
-            print(record)
+        # Use rich formatter to display contacts
+        RichFormatter.display_contacts_table(self.address_book.data.values())
     
     def search_contacts(self):
-        """Search for contacts"""
-        query = input("Enter search query: ").strip()
+        """Search contacts"""
+        query = RichFormatter.ask_input("Enter search query: ")
         if not query:
-            print("Search query cannot be empty.")
+            RichFormatter.print_error("Search query cannot be empty.")
             return
         
         results = self.address_book.search(query)
         if not results:
-            print("No contacts found.")
+            if RichFormatter.jarvis_mode:
+                RichFormatter.print_warning(f"Scan complete. No human records found matching query '{query}'.")
+            else:
+                RichFormatter.print_warning(f"No contacts found for query '{query}'.")
             return
         
-        print("\nFound contacts:")
-        for record in results:
-            print(record)
+        if RichFormatter.jarvis_mode:
+            RichFormatter.print_success(f"Human record scan complete. Located {len(results)} matching entries:")
+        else:
+            RichFormatter.print_success(f"Found {len(results)} contacts:")
+        RichFormatter.display_contacts_table(results)
     
     def edit_contact(self):
-        """Edit an existing contact"""
-        name = input("Enter contact name to edit: ").strip()
-        record = self.address_book.find(name)
-        
-        if not record:
-            print(f"Contact '{name}' not found.")
+        """Edit a contact"""
+        name = RichFormatter.ask_input("Enter contact name to edit: ")
+        if not name:
+            RichFormatter.print_error("Contact name cannot be empty.")
             return
         
-        print("\nCurrent contact information:")
-        print(record)
+        record = self.address_book.find(name)
+        if not record:
+            RichFormatter.print_error(f"Contact '{name}' not found.")
+            return
         
-        while True:
-            print("\nWhat would you like to edit?")
-            print("1. Phone numbers")
-            print("2. Email")
-            print("3. Birthday")
-            print("4. Address")
-            print("0. Done")
-            
-            choice = input("Enter your choice (0-4): ").strip()
-            
-            if choice == "0":
-                break
-            elif choice == "1":
-                self._edit_phones(record)
-            elif choice == "2":
-                self._edit_email(record)
-            elif choice == "3":
-                self._edit_birthday(record)
-            elif choice == "4":
-                self._edit_address(record)
-            else:
-                print("Invalid choice.")
+        # Display the contact
+        RichFormatter.display_contact(record)
+        
+        # Choose what to edit
+        options = ["name", "phones", "email", "birthday", "address"]
+        edit_table = Table(title="Edit Options", box=box.ROUNDED)
+        edit_table.add_column("Option", style="cyan")
+        edit_table.add_column("Description", style="white")
+        
+        edit_table.add_row("1", "Edit name")
+        edit_table.add_row("2", "Edit phones")
+        edit_table.add_row("3", "Edit email")
+        edit_table.add_row("4", "Edit birthday")
+        edit_table.add_row("5", "Edit address")
+        
+        RichFormatter.console.print(edit_table)
+        
+        choice = RichFormatter.ask_input("Choose what to edit (1-5): ")
+        
+        try:
+            idx = int(choice) - 1
+            if 0 <= idx < len(options):
+                field = options[idx]
+                if field == "name":
+                    new_name = RichFormatter.ask_input("Enter new name: ")
+                    if new_name and new_name != name:
+                        # Check if the new name already exists
+                        if self.address_book.find(new_name):
+                            RichFormatter.print_error(f"Contact '{new_name}' already exists.")
+                            return
+                        old_name = record.name.value
+                        record.edit_name(new_name)
+                        # Update the key in the address book
+                        self.address_book.data[new_name] = record
+                        del self.address_book.data[old_name]
+                        self.address_book.save()
+                        RichFormatter.print_success(f"Name updated from '{old_name}' to '{new_name}'.")
+                elif field == "phones":
+                    self._edit_phones(record)
+                elif field == "email":
+                    self._edit_email(record)
+                elif field == "birthday":
+                    self._edit_birthday(record)
+                elif field == "address":
+                    self._edit_address(record)
+                
+                # Display updated contact
+                RichFormatter.print_success("Contact updated successfully!")
+                RichFormatter.display_contact(record)
+        except ValueError:
+            RichFormatter.print_error("Invalid choice.")
     
     def delete_contact(self):
         """Delete a contact"""
-        name = input("Enter contact name to delete: ").strip()
+        name = RichFormatter.ask_input("Enter contact name to delete: ")
         if not name:
-            print("Name cannot be empty.")
+            RichFormatter.print_error("Contact name cannot be empty.")
             return
         
-        if self.address_book.delete(name):
-            print(f"Contact '{name}' deleted successfully.")
+        record = self.address_book.find(name)
+        if not record:
+            RichFormatter.print_error(f"Contact '{name}' not found.")
+            return
+        
+        # Display the contact and confirm deletion
+        RichFormatter.display_contact(record)
+        confirm = RichFormatter.ask_confirm(f"Are you sure you want to delete contact '{name}'?", False)
+        
+        if confirm:
+            self.address_book.delete(name)
+            RichFormatter.print_success(f"Contact '{name}' deleted successfully.")
         else:
-            print(f"Contact '{name}' not found.")
+            RichFormatter.print_info("Deletion cancelled.")
     
     def show_upcoming_birthdays(self):
         """Show upcoming birthdays"""
-        days = input("Enter number of days to look ahead (default 7): ").strip()
-        days = int(days) if days.isdigit() else 7
-        
-        birthdays = self.address_book.get_upcoming_birthdays(days)
-        if not birthdays:
-            print(f"No birthdays in the next {days} days.")
+        try:
+            days = int(RichFormatter.ask_input("Enter number of days to check: ", "7"))
+            if days < 0:
+                RichFormatter.print_error("Number of days should be positive.")
+                return
+        except ValueError:
+            RichFormatter.print_error("Please enter a valid number.")
             return
         
-        print(f"\nUpcoming birthdays in the next {days} days:")
-        for record in birthdays:
-            print(f"{record.name}: {record.birthday}")
+        upcoming = self.address_book.get_birthdays(days)
+        if not upcoming:
+            RichFormatter.print_warning(f"No birthdays in the next {days} days.")
+            return
+        
+        # Create a table for birthdays
+        birthday_table = Table(title=f"Upcoming Birthdays (Next {days} days)", box=box.ROUNDED)
+        birthday_table.add_column("Name", style="cyan")
+        birthday_table.add_column("Birthday", style="green")
+        birthday_table.add_column("Days Left", style="magenta")
+        
+        for record, days_left in upcoming:
+            birthday_display = record.birthday.value
+            days_text = "Today!" if days_left == 0 else f"{days_left} days"
+            birthday_table.add_row(record.name.value, birthday_display, days_text)
+        
+        RichFormatter.console.print(birthday_table)
     
     # Note management methods
     def add_note(self):
         """Add a new note"""
         try:
-            title = input("Enter note title: ").strip()
-            if not title:
-                print("Title cannot be empty.")
+            name = RichFormatter.ask_input("Enter note title: ")
+            if not name:
+                RichFormatter.print_error("Title cannot be empty.")
                 return
             
-            # Check if note already exists
-            if self.note_book.find(title):
-                print(f"Note with title '{title}' already exists.")
-                return
-            
-            content = input("Enter note content: ").strip()
-            if not content:
-                print("Content cannot be empty.")
-                return
+            content = RichFormatter.ask_input("Enter note content: ")
             
             # Create a new note record
-            from src.record import NoteRecord
-            record = NoteRecord(title, content)
+            record = NoteRecord(name, content)
             
             # Add tags
             while True:
-                tag = input("Enter tag (leave empty to finish): ").strip()
-                if not tag:
+                add_tag = RichFormatter.ask_confirm("Add a tag to this note?", False)
+                if not add_tag:
                     break
-                record.add_tag(tag)
+                
+                tag = RichFormatter.ask_input("Enter tag: ")
+                if tag:
+                    try:
+                        record.add_tag(tag)
+                    except ValueError as e:
+                        RichFormatter.print_error(f"Error: {e}")
             
-            # Add the record to the note book
+            # Add to note book
             self.note_book.add_record(record)
-            print(f"Note '{title}' added successfully.")
             
-        except ValueError as e:
-            print(f"Error: {e}")
+            if RichFormatter.jarvis_mode:
+                RichFormatter.print_success(f"Memory file '{name}' successfully created and stored.")
+            else:
+                RichFormatter.print_success(f"Note '{name}' added successfully!")
+                
+            RichFormatter.display_note(record)
+            
+        except Exception as e:
+            RichFormatter.print_error(f"Error adding note: {e}")
+    
+    def show_all_notes(self):
+        """Show all notes"""
+        if not self.note_book.data:
+            RichFormatter.print_warning("Note book is empty.")
+            return
+        
+        # Use rich formatter to display notes
+        if RichFormatter.jarvis_mode:
+            RichFormatter.print_success("Displaying all available memory files in database:")
+        else:
+            RichFormatter.print_success("Displaying all notes:")
+            
+        RichFormatter.display_notes_table(self.note_book.data.values())
     
     def search_notes(self):
-        """Search for notes"""
-        query = input("Enter search query: ").strip()
+        """Search notes"""
+        query = RichFormatter.ask_input("Enter search query: ")
         if not query:
-            print("Search query cannot be empty.")
+            RichFormatter.print_error("Search query cannot be empty.")
             return
         
-        notes = self.note_book.search(query)
-        if not notes:
-            print("No notes found.")
+        results = self.note_book.search(query)
+        if not results:
+            if RichFormatter.jarvis_mode:
+                RichFormatter.print_warning(f"Memory scan complete. No data found matching query '{query}'.")
+            else:
+                RichFormatter.print_warning(f"No notes found for query '{query}'.")
             return
         
-        print("\nFound notes:")
-        for note in notes:
-            print(note)
-            print("-" * 30)
+        if RichFormatter.jarvis_mode:
+            RichFormatter.print_success(f"Memory scan complete. Retrieved {len(results)} matching records:")
+        else:
+            RichFormatter.print_success(f"Found {len(results)} notes:")
+        RichFormatter.display_notes_table(results)
     
     def edit_note(self):
         """Edit a note"""
-        title = input("Enter note title to edit: ").strip()
-        note = self.note_book.find(title)
-        
-        if not note:
-            print(f"Note '{title}' not found.")
+        title = RichFormatter.ask_input("Enter note title to edit: ")
+        if not title:
+            RichFormatter.print_error("Note title cannot be empty.")
             return
         
-        print("\nCurrent note:")
-        print(note)
+        note = self.note_book.find(title)
+        if not note:
+            RichFormatter.print_error(f"Note '{title}' not found.")
+            return
         
-        new_content = input("Enter new content (leave empty to keep current): ").strip()
-        if new_content:
-            note.edit_content(new_content)
-            self.note_book.save()
-            print("Note content updated successfully.")
-            
-        # Ask if user wants to edit tags
-        edit_tags = input("Do you want to edit tags? (y/n): ").strip().lower()
-        if edit_tags == 'y':
-            self._edit_note_tags(note)
-            self.note_book.save()
+        # Display the note
+        RichFormatter.display_note(note)
         
-        print("Note updated successfully.")
+        # Choose what to edit
+        options = ["title", "content", "tags"]
+        edit_table = Table(title="Edit Options", box=box.ROUNDED)
+        edit_table.add_column("Option", style="cyan")
+        edit_table.add_column("Description", style="white")
+        
+        edit_table.add_row("1", "Edit title")
+        edit_table.add_row("2", "Edit content")
+        edit_table.add_row("3", "Edit tags")
+        
+        RichFormatter.console.print(edit_table)
+        
+        choice = RichFormatter.ask_input("Choose what to edit (1-3): ")
+        
+        try:
+            idx = int(choice) - 1
+            if 0 <= idx < len(options):
+                field = options[idx]
+                if field == "title":
+                    new_title = RichFormatter.ask_input("Enter new title: ")
+                    if new_title and new_title != title:
+                        # Check if the new title already exists
+                        if self.note_book.find(new_title):
+                            RichFormatter.print_error(f"Note '{new_title}' already exists.")
+                            return
+                        old_title = note.name.value
+                        note.edit_name(new_title)
+                        # Update the key in the note book
+                        self.note_book.data[new_title] = note
+                        del self.note_book.data[old_title]
+                        self.note_book.save()
+                        RichFormatter.print_success(f"Title updated from '{old_title}' to '{new_title}'.")
+                elif field == "content":
+                    current_content = note.content
+                    RichFormatter.print_info(f"Current content: {current_content}")
+                    new_content = RichFormatter.ask_input("Enter new content: ")
+                    note.edit_content(new_content)
+                    self.note_book.save()
+                    RichFormatter.print_success("Content updated successfully.")
+                elif field == "tags":
+                    self._edit_note_tags(note)
+                
+                # Display updated note
+                RichFormatter.print_success("Note updated successfully!")
+                RichFormatter.display_note(note)
+        except ValueError:
+            RichFormatter.print_error("Invalid choice.")
     
     def delete_note(self):
         """Delete a note"""
-        title = input("Enter note title to delete: ").strip()
+        title = RichFormatter.ask_input("Enter note title to delete: ")
         if not title:
-            print("Title cannot be empty.")
+            RichFormatter.print_error("Note title cannot be empty.")
             return
         
-        if self.note_book.delete(title):
-            print(f"Note '{title}' deleted successfully.")
+        note = self.note_book.find(title)
+        if not note:
+            RichFormatter.print_error(f"Note '{title}' not found.")
+            return
+        
+        # Display the note and confirm deletion
+        RichFormatter.display_note(note)
+        confirm = RichFormatter.ask_confirm(f"Are you sure you want to delete note '{title}'?", False)
+        
+        if confirm:
+            self.note_book.delete(title)
+            RichFormatter.print_success(f"Note '{title}' deleted successfully.")
         else:
-            print(f"Note '{title}' not found.")
+            RichFormatter.print_info("Deletion cancelled.")
     
     def add_tag_to_note(self):
-        """Add a tag to a note"""
-        title = input("Enter note title: ").strip()
+        """Add a tag to an existing note"""
+        title = RichFormatter.ask_input("Enter note title: ")
+        if not title:
+            RichFormatter.print_error("Note title cannot be empty.")
+            return
+        
         note = self.note_book.find(title)
-        
         if not note:
-            print(f"Note '{title}' not found.")
+            RichFormatter.print_error(f"Note '{title}' not found.")
             return
         
-        tag = input("Enter tag to add: ").strip()
-        if not tag:
-            print("Tag cannot be empty.")
-            return
-        
-        if note.add_tag(tag):
-            self.note_book.save()
-            print(f"Tag '{tag}' added to note '{title}'")
-        else:
-            print(f"Tag '{tag}' already exists in note '{title}'")
-            
+        RichFormatter.display_note(note)
+        self._edit_note_tags(note)
+    
     def _edit_note_tags(self, note):
-        """Helper method to edit note tags"""
+        """Edit tags for a note"""
         while True:
-            print("\nCurrent tags:")
+            # Display current tags
             if note.tags:
-                for i, tag in enumerate(note.tags, 1):
-                    print(f"{i}. {tag}")
+                tag_text = " ".join([f"#{tag.value}" for tag in note.tags])
+                RichFormatter.print_info(f"Current tags: {tag_text}")
             else:
-                print("No tags")
+                RichFormatter.print_info("No tags set.")
             
-            print("\nOptions:")
-            print("1. Add new tag")
-            print("2. Remove tag")
-            print("0. Done")
+            # Options table
+            tags_table = Table(title="Tag Options", box=box.ROUNDED)
+            tags_table.add_column("Option", style="cyan")
+            tags_table.add_column("Description", style="white")
             
-            choice = input("Enter your choice (0-2): ").strip()
+            tags_table.add_row("1", "Add a tag")
+            tags_table.add_row("2", "Remove a tag")
+            tags_table.add_row("3", "Done editing tags")
             
-            if choice == "0":
-                break
-            elif choice == "1":
-                tag = input("Enter new tag: ").strip()
-                if tag:
-                    if note.add_tag(tag):
-                        print(f"Tag '{tag}' added.")
-                    else:
-                        print(f"Tag '{tag}' already exists.")
+            RichFormatter.console.print(tags_table)
+            
+            choice = RichFormatter.ask_input("Choose an option (1-3): ")
+            
+            if choice == "1":
+                tag = RichFormatter.ask_input("Enter tag (without #): ")
+                if not tag:
+                    RichFormatter.print_error("Tag cannot be empty.")
+                    continue
+                
+                # Remove # if present
+                if tag.startswith('#'):
+                    tag = tag[1:]
+                
+                if note.add_tag(tag):
+                    self.note_book.save()
+                    RichFormatter.print_success(f"Tag #{tag} added successfully.")
                 else:
-                    print("Tag cannot be empty.")
+                    RichFormatter.print_warning(f"Tag #{tag} already exists for this note.")
+            
             elif choice == "2":
                 if not note.tags:
-                    print("No tags to remove.")
+                    RichFormatter.print_warning("No tags to remove.")
                     continue
                 
-                idx = input(f"Enter number to remove (1-{len(note.tags)}): ").strip()
-                if not idx.isdigit() or not 1 <= int(idx) <= len(note.tags):
-                    print("Invalid index.")
-                    continue
+                # Display tags with indices
+                for i, tag in enumerate(note.tags, 1):
+                    RichFormatter.print_info(f"{i}. #{tag.value}")
                 
-                tag = note.tags[int(idx)-1].value
-                if note.remove_tag(tag):
-                    print(f"Tag '{tag}' removed.")
-                else:
-                    print(f"Failed to remove tag '{tag}'.")
+                idx = RichFormatter.ask_input("Enter tag number to remove (or 0 to cancel): ")
+                try:
+                    idx = int(idx)
+                    if idx == 0:
+                        continue
+                    if 1 <= idx <= len(note.tags):
+                        tag_to_remove = note.tags[idx-1].value
+                        if note.remove_tag(tag_to_remove):
+                            self.note_book.save()
+                            RichFormatter.print_success(f"Tag #{tag_to_remove} removed successfully.")
+                        else:
+                            RichFormatter.print_error(f"Failed to remove tag #{tag_to_remove}.")
+                    else:
+                        RichFormatter.print_error("Invalid tag number.")
+                except ValueError:
+                    RichFormatter.print_error("Please enter a valid number.")
+            
+            elif choice == "3":
+                break
+            
             else:
-                print("Invalid choice.")
+                RichFormatter.print_error("Invalid choice.")
     
     def search_notes_by_tag(self):
         """Search notes by tag"""
-        tag = input("Enter tag to search for: ").strip()
+        tag = RichFormatter.ask_input("Enter tag to search for (with or without #): ")
         if not tag:
-            print("Tag cannot be empty.")
+            RichFormatter.print_error("Tag cannot be empty.")
             return
         
-        notes = self.note_book.search_by_tag(tag)
-        if not notes:
-            print(f"No notes found with tag '{tag}'")
+        results = self.note_book.search_by_tag(tag)
+        if not results:
+            RichFormatter.print_warning(f"No notes found with tag #{tag.lstrip('#')}.")
             return
         
-        print(f"\nNotes with tag '{tag}':")
-        for note in notes:
-            print(note)
-            print("-" * 30)
+        RichFormatter.print_success(f"Found {len(results)} notes with tag #{tag.lstrip('#')}:")
+        RichFormatter.display_notes_table(results)
     
     def sort_notes_by_tags(self):
-        """Sort and display notes by tags"""
+        """Sort and display notes grouped by tags"""
         sorted_notes = self.note_book.sort_by_tags()
+        
         if not sorted_notes:
-            print("No notes found.")
+            RichFormatter.print_warning("No notes found.")
             return
         
-        print("\nNotes sorted by tags:")
+        RichFormatter.print_header("Notes Sorted by Tags")
+        
         for tag, notes in sorted_notes.items():
             if tag == "no_tags":
-                print("\nNotes without tags:")
+                tag_display = "Notes without tags"
             else:
-                print(f"\nTag: #{tag}")
+                tag_display = f"Tag: #{tag}"
+            
+            # Create a table for each tag group
+            tag_table = Table(title=tag_display, box=box.ROUNDED)
+            tag_table.add_column("Title", style="cyan")
+            tag_table.add_column("Content Preview", style="white")
             
             for note in notes:
-                print(note)
-                print("-" * 30)
+                content_preview = (note.content[:30] + "...") if len(note.content) > 30 else note.content
+                tag_table.add_row(note.name.value, content_preview)
+            
+            RichFormatter.console.print(tag_table)
     
     # Helper methods for contact editing
     def _edit_phones(self, record):
-        """Helper method to edit phone numbers"""
+        """Helper method to edit contact phones"""
         while True:
-            print("\nCurrent phone numbers:")
-            for i, phone in enumerate(record.phones, 1):
-                print(f"{i}. {phone}")
+            # Display current phones
+            if record.phones:
+                RichFormatter.print_info("Current phone numbers:")
+                for i, phone in enumerate(record.phones, 1):
+                    RichFormatter.print_info(f"{i}. {phone.value}")
+            else:
+                RichFormatter.print_info("No phone numbers set.")
             
-            print("\nOptions:")
-            print("1. Add new phone")
-            print("2. Edit existing phone")
-            print("3. Delete phone")
-            print("0. Done")
+            # Create options table
+            phone_table = Table(title="Phone Options", box=box.ROUNDED)
+            phone_table.add_column("Option", style="cyan")
+            phone_table.add_column("Description", style="white")
             
-            choice = input("Enter your choice (0-3): ").strip()
+            phone_table.add_row("1", "Add a phone number")
+            phone_table.add_row("2", "Edit a phone number")
+            phone_table.add_row("3", "Remove a phone number")
+            phone_table.add_row("4", "Done editing phones")
             
-            if choice == "0":
-                break
-            elif choice == "1":
-                phone = input("Enter new phone number: ").strip()
+            RichFormatter.console.print(phone_table)
+            
+            choice = RichFormatter.ask_input("Choose an option (1-4): ")
+            
+            if choice == "1":
+                phone = RichFormatter.ask_input("Enter new phone number: ")
+                if not phone:
+                    RichFormatter.print_error("Phone number cannot be empty.")
+                    continue
+                
                 try:
                     record.add_phone(phone)
-                    print("Phone number added.")
+                    self.address_book.save()
+                    RichFormatter.print_success(f"Phone number {phone} added successfully.")
                 except ValueError as e:
-                    print(f"Error: {e}")
+                    RichFormatter.print_error(f"Error: {e}")
+            
             elif choice == "2":
                 if not record.phones:
-                    print("No phone numbers to edit.")
+                    RichFormatter.print_warning("No phone numbers to edit.")
                     continue
                 
-                idx = input("Enter number to edit (1-{}): ".format(len(record.phones))).strip()
-                if not idx.isdigit() or not 1 <= int(idx) <= len(record.phones):
-                    print("Invalid index.")
-                    continue
-                
-                new_phone = input("Enter new phone number: ").strip()
+                idx = RichFormatter.ask_input("Enter phone number to edit (or 0 to cancel): ")
                 try:
-                    record.edit_phone(int(idx)-1, new_phone)
-                    print("Phone number updated.")
-                except ValueError as e:
-                    print(f"Error: {e}")
+                    idx = int(idx)
+                    if idx == 0:
+                        continue
+                    if 1 <= idx <= len(record.phones):
+                        old_phone = record.phones[idx-1].value
+                        new_phone = RichFormatter.ask_input(f"Enter new phone number to replace {old_phone}: ")
+                        if not new_phone:
+                            RichFormatter.print_error("Phone number cannot be empty.")
+                            continue
+                        
+                        try:
+                            if record.edit_phone(old_phone, new_phone):
+                                self.address_book.save()
+                                RichFormatter.print_success(f"Phone number updated from {old_phone} to {new_phone}.")
+                            else:
+                                RichFormatter.print_error(f"Failed to update phone number.")
+                        except ValueError as e:
+                            RichFormatter.print_error(f"Error: {e}")
+                    else:
+                        RichFormatter.print_error("Invalid phone number index.")
+                except ValueError:
+                    RichFormatter.print_error("Please enter a valid number.")
+            
             elif choice == "3":
                 if not record.phones:
-                    print("No phone numbers to delete.")
+                    RichFormatter.print_warning("No phone numbers to remove.")
                     continue
                 
-                idx = input("Enter number to delete (1-{}): ".format(len(record.phones))).strip()
-                if not idx.isdigit() or not 1 <= int(idx) <= len(record.phones):
-                    print("Invalid index.")
-                    continue
-                
-                record.delete_phone(int(idx)-1)
-                print("Phone number deleted.")
+                idx = RichFormatter.ask_input("Enter phone number to remove (or 0 to cancel): ")
+                try:
+                    idx = int(idx)
+                    if idx == 0:
+                        continue
+                    if 1 <= idx <= len(record.phones):
+                        phone = record.phones[idx-1].value
+                        if record.remove_phone(phone):
+                            self.address_book.save()
+                            RichFormatter.print_success(f"Phone number {phone} removed successfully.")
+                        else:
+                            RichFormatter.print_error(f"Failed to remove phone number {phone}.")
+                    else:
+                        RichFormatter.print_error("Invalid phone number index.")
+                except ValueError:
+                    RichFormatter.print_error("Please enter a valid number.")
+            
+            elif choice == "4":
+                break
+            
             else:
-                print("Invalid choice.")
+                RichFormatter.print_error("Invalid choice.")
     
     def _edit_email(self, record):
-        """Helper method to edit email"""
-        print(f"Current email: {record.email if record.email else 'None'}")
-        email = input("Enter new email (leave empty to remove): ").strip()
+        """Helper method to edit contact email"""
+        if record.emails:
+            RichFormatter.print_info("Current emails:")
+            for i, email in enumerate(record.emails, 1):
+                RichFormatter.print_info(f"{i}. {email.value}")
+            
+            # Choose to edit or remove or add new
+            email_table = Table(title="Email Options", box=box.ROUNDED)
+            email_table.add_column("Option", style="cyan")
+            email_table.add_column("Description", style="white")
+            
+            email_table.add_row("1", "Edit an email")
+            email_table.add_row("2", "Remove an email")
+            email_table.add_row("3", "Add a new email")
+            
+            RichFormatter.console.print(email_table)
+            
+            choice = RichFormatter.ask_input("Choose an option (1-3): ")
+            
+            if choice == "1":
+                idx = RichFormatter.ask_input("Enter email number to edit: ")
+                try:
+                    idx = int(idx)
+                    if 1 <= idx <= len(record.emails):
+                        old_email = record.emails[idx-1].value
+                        new_email = RichFormatter.ask_input(f"Enter new email to replace {old_email}: ")
+                        try:
+                            if record.edit_email(old_email, new_email):
+                                self.address_book.save()
+                                RichFormatter.print_success(f"Email updated from {old_email} to {new_email}.")
+                            else:
+                                RichFormatter.print_error("Failed to update email.")
+                        except ValueError as e:
+                            RichFormatter.print_error(f"Error: {e}")
+                    else:
+                        RichFormatter.print_error("Invalid email index.")
+                except ValueError:
+                    RichFormatter.print_error("Please enter a valid number.")
+            
+            elif choice == "2":
+                idx = RichFormatter.ask_input("Enter email number to remove: ")
+                try:
+                    idx = int(idx)
+                    if 1 <= idx <= len(record.emails):
+                        email = record.emails[idx-1].value
+                        if record.remove_email(email):
+                            self.address_book.save()
+                            RichFormatter.print_success(f"Email {email} removed successfully.")
+                        else:
+                            RichFormatter.print_error(f"Failed to remove email {email}.")
+                    else:
+                        RichFormatter.print_error("Invalid email index.")
+                except ValueError:
+                    RichFormatter.print_error("Please enter a valid number.")
+            
+            elif choice == "3":
+                email = RichFormatter.ask_input("Enter new email: ")
+                try:
+                    record.add_email(email)
+                    self.address_book.save()
+                    RichFormatter.print_success(f"Email {email} added successfully.")
+                except ValueError as e:
+                    RichFormatter.print_error(f"Error: {e}")
+            
+            else:
+                RichFormatter.print_error("Invalid choice.")
         
-        try:
-            if email:
+        else:
+            # No emails, just add a new one
+            email = RichFormatter.ask_input("No emails set. Enter email: ")
+            try:
                 record.add_email(email)
-                print("Email updated.")
-            elif record.email:
-                record.remove_email()
-                print("Email removed.")
-        except ValueError as e:
-            print(f"Error: {e}")
+                self.address_book.save()
+                RichFormatter.print_success(f"Email {email} added successfully.")
+            except ValueError as e:
+                RichFormatter.print_error(f"Error: {e}")
     
     def _edit_birthday(self, record):
-        """Helper method to edit birthday"""
-        print(f"Current birthday: {record.birthday if record.birthday else 'None'}")
-        birthday = input("Enter new birthday (YYYY-MM-DD, leave empty to remove): ").strip()
+        """Helper method to edit contact birthday"""
+        if record.birthday:
+            RichFormatter.print_info(f"Current birthday: {record.birthday.value}")
+            
+            # Ask to edit or remove
+            choice = RichFormatter.ask_input("Do you want to (1) edit or (2) remove the birthday? Enter choice (1/2): ")
+            
+            if choice == "1":
+                birthday = RichFormatter.ask_input("Enter new birthday (YYYY-MM-DD): ")
+                try:
+                    record.set_birthday(birthday)
+                    self.address_book.save()
+                    RichFormatter.print_success(f"Birthday updated to {birthday}.")
+                except ValueError as e:
+                    RichFormatter.print_error(f"Error: {e}")
+            
+            elif choice == "2":
+                record.birthday = None
+                self.address_book.save()
+                RichFormatter.print_success("Birthday removed.")
+            
+            else:
+                RichFormatter.print_error("Invalid choice.")
         
-        try:
-            if birthday:
-                record.add_birthday(birthday)
-                print("Birthday updated.")
-            elif record.birthday:
-                record.remove_birthday()
-                print("Birthday removed.")
-        except ValueError as e:
-            print(f"Error: {e}")
+        else:
+            # No birthday set, just add a new one
+            birthday = RichFormatter.ask_input("No birthday set. Enter birthday (YYYY-MM-DD): ")
+            try:
+                record.set_birthday(birthday)
+                self.address_book.save()
+                RichFormatter.print_success(f"Birthday set to {birthday}.")
+            except ValueError as e:
+                RichFormatter.print_error(f"Error: {e}")
     
     def _edit_address(self, record):
-        """Helper method to edit address"""
-        print(f"Current address: {record.address if record.address else 'None'}")
-        address = input("Enter new address (leave empty to remove): ").strip()
-        
-        if address:
-            record.add_address(address)
-            print("Address updated.")
-        elif record.address:
-            record.remove_address()
-            print("Address removed.")
+        """Helper method to edit contact address"""
+        if record.address:
+            RichFormatter.print_info(f"Current address: {record.address.value}")
             
+            # Ask to edit or remove
+            choice = RichFormatter.ask_input("Do you want to (1) edit or (2) remove the address? Enter choice (1/2): ")
+            
+            if choice == "1":
+                address = RichFormatter.ask_input("Enter new address: ")
+                record.set_address(address)
+                self.address_book.save()
+                RichFormatter.print_success(f"Address updated to {address}.")
+            
+            elif choice == "2":
+                record.address = None
+                self.address_book.save()
+                RichFormatter.print_success("Address removed.")
+            
+            else:
+                RichFormatter.print_error("Invalid choice.")
+        
+        else:
+            # No address set, just add a new one
+            address = RichFormatter.ask_input("No address set. Enter address: ")
+            record.set_address(address)
+            self.address_book.save()
+            RichFormatter.print_success(f"Address set to {address}.")
+    
     def change_language(self):
         """Change the interface language"""
-        if self.localization.change_language():
-            # Reinitialize the input parser to update command mappings
-            self.input_parser = InputParser(self.commands)
+        # Get available languages
+        available_languages = self.localization.get_available_languages()
+        
+        # Create a table for language options
+        lang_table = Table(title="Available Languages", box=box.ROUNDED)
+        lang_table.add_column("Option", style="cyan")
+        lang_table.add_column("Language", style="white")
+        
+        for i, (code, name) in enumerate(available_languages.items(), 1):
+            lang_table.add_row(str(i), name)
+        
+        RichFormatter.console.print(lang_table)
+        
+        choice = RichFormatter.ask_input(f"Choose language (1-{len(available_languages)}): ")
+        try:
+            idx = int(choice) - 1
+            if 0 <= idx < len(available_languages):
+                language_code = list(available_languages.keys())[idx]
+                self.localization.set_language(language_code)
+                # Reinitialize the input parser to update command mappings
+                self.input_parser = InputParser(self.commands)
+                RichFormatter.print_success(f"Language changed to {available_languages[language_code]}.")
+            else:
+                RichFormatter.print_error("Invalid choice.")
+        except ValueError:
+            RichFormatter.print_error("Please enter a valid number.")
+
+    def toggle_jarvis_mode(self):
+        """Toggle Jarvis mode on/off"""
+        is_enabled = RichFormatter.toggle_jarvis_mode()
+        
+        # Show welcome message if enabled
+        if is_enabled:
+            RichFormatter.print_jarvis_welcome()
+            RichFormatter.print_success(self.localization.get_text("jarvis_enabled"))
+        else:
+            RichFormatter.print_success(self.localization.get_text("jarvis_disabled"))
+            
+        # Show available commands after toggling Jarvis mode
+        self.show_help()
